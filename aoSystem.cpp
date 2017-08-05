@@ -499,7 +499,7 @@ int mxAOSystem_app<realT>::execute()
    }
    else if (mode == "temporalPSDGrid")
    {
-      rv = temporalPSD();
+      rv = temporalPSDGrid();
    }
    else
    {
