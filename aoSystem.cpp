@@ -8,7 +8,7 @@
 
 
 #include <mx/improc/fitsFile.hpp>
-#include <mx/wfp/airy.hpp>
+#include <mx/math/func/airyPattern.hpp>
 
 #define MX_APP_DEFAULT_configPathGlobal_env "MXAOSYSTEM_GLOBAL_CONFIG"
 #define MX_APP_DEFAULT_configPathLocal "aoSystem.conf"
@@ -18,7 +18,7 @@
 #include <mx/ao/analysis/aoPSDs.hpp>
 #include <mx/ao/analysis/aoWFS.hpp>
 #include <mx/ao/analysis/varmapToImage.hpp>
-
+#include <mx/ao/analysis/fourierTemporalPSD.hpp>
 ///
 /**
   * Star Magnitudes:
@@ -62,6 +62,12 @@ protected:
    
    std::vector<realT> starMags;
    
+   realT dfreq;
+   realT kmax;
+   realT k_m;
+   realT k_n;
+   std::string gridDir; ///<The directory for writing the grid of PSDs.
+   
    virtual void setupConfig();
 
    virtual void loadConfig();
@@ -96,6 +102,9 @@ protected:
    
    int Strehl();
    
+   int temporalPSD();
+   
+   int temporalPSDGrid();
 };
 
 template<typename realT>
@@ -115,6 +124,12 @@ mxAOSystem_app<realT>::mxAOSystem_app()
    aosys.loadMagAOX(); 
    
    mnMap = 50;
+   
+   dfreq = 0.1;
+   kmax = 0;
+   k_m = 1;
+   k_n = 0;
+
 }
 
 template<typename realT>
@@ -167,6 +182,16 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("ncp_alpha"    ,"", "ncp_alpha"  , mx::argType::Required, "system", "ncp_alpha",   false, "real", "PSD index for NCP WFE");
    config.add("starMag"      ,"", "starMag"    , mx::argType::Required,  "system", "starMag",     false, "real", "Star magnitude");
    config.add("starMags"     ,"", "starMags"    , mx::argType::Required,  "system", "starMags",     false, "real", "A vector of star magnitudes");
+   
+   //Temporal configuration
+   config.add("kmax"     ,"", "kmax"    , mx::argType::Required,  "temporal", "kmax",     false, "real", "Maximum frequency at which to explicitly calculate PSDs.");
+   config.add("dfreq"     ,"", "dfreq"    , mx::argType::Required,  "temporal", "dfreq",     false, "real", "Spacing of frequencies in the analysis.");
+   config.add("k_m"     ,"", "k_m"    , mx::argType::Required,  "temporal", "k_m",     false, "real", "The spatial frequency m index.");
+   config.add("k_n"     ,"", "k_n"    , mx::argType::Required,  "temporal", "k_n",     false, "real", "The spatial frequency n index.");
+   config.add("gridDir"     ,"", "gridDir"    , mx::argType::Required,  "temporal", "gridDir",     false, "string", "The directory to store the grid of PSDs.");
+   
+   
+   
 }
 
 template<typename realT>
@@ -193,11 +218,18 @@ void mxAOSystem_app<realT>::loadConfig()
    //These are called before anything else, so all parameters are modifications.
    std::string model;
    config(model, "model");
-      
-   if( model == "Guyon2005" ) aosys.loadGuyon2005(); 
-   if( model == "MagAOX" ) aosys.loadMagAOX();
-   if( model == "GMagAOX" ) aosys.loadGMagAOX();
    
+   if(model != "")
+   {
+      if( model == "Guyon2005" ) aosys.loadGuyon2005(); 
+      else if( model == "MagAOX" ) aosys.loadMagAOX();
+      else if( model == "GMagAOX" ) aosys.loadGMagAOX();
+      else
+      {
+         std::cerr << "Unknown model: " << model << "\n";
+         return;
+      }
+   }
    
    /**********************************************************/
    /* Atmosphere                                             */
@@ -379,6 +411,17 @@ void mxAOSystem_app<realT>::loadConfig()
    {
       starMags = config.get<std::vector<realT>>("starMags");
    }
+   
+   /**********************************************************/
+   /* Temporal PSDs                                          */
+   /**********************************************************/
+   config.get(kmax, "kmax");
+   config.get(dfreq, "dfreq");
+   config.get(k_m, "k_m");
+   config.get(k_n, "k_n");
+   
+   config.get(gridDir, "gridDir");
+   
 }
 
 
@@ -450,6 +493,14 @@ int mxAOSystem_app<realT>::execute()
    {
       rv = Strehl();
    }
+   else if (mode == "temporalPSD")
+   {
+      rv = temporalPSD();
+   }
+   else if (mode == "temporalPSDGrid")
+   {
+      rv = temporalPSD();
+   }
    else
    {
       std::cerr << "Unknown mode: " << mode << "\n";
@@ -483,7 +534,7 @@ int mxAOSystem_app<realT>::C_MapCon( const std::string & mapFile,
    {
       for(int j=0;j<psf.cols();++j)
       {
-         psf(i,j) = mx::wfp::airy(sqrt( pow( i-floor(.5*psf.rows()),2) + pow(j-floor(.5*psf.cols()),2)));
+         psf(i,j) = mx::math::func::airyPattern(sqrt( pow( i-floor(.5*psf.rows()),2) + pow(j-floor(.5*psf.cols()),2)));
       }
    }
    
@@ -621,16 +672,6 @@ int mxAOSystem_app<realT>::C7Raw()
 }
 
 template<typename realT>
-int mxAOSystem_app<realT>::CAllRaw()
-{
-   for(int i=0;i< aosys.fit_mn_max(); ++i)
-   {
-      std::cout << i << " " << aosys.C0(i,0, false) << " " << aosys.C1(i,0, false) << " " << aosys.C2(i,0, false) << " " << aosys.C4(i,0, false);
-      std::cout << " " << aosys.C6(i,0, false) << " " << aosys.C7(i,0, false) << "\n";
-   }
-}
-
-template<typename realT>
 int mxAOSystem_app<realT>::C7Map()
 {
    imageT map;
@@ -642,6 +683,17 @@ int mxAOSystem_app<realT>::C7Map()
    C_MapCon("C7Map.fits", map);
    
 }
+
+template<typename realT>
+int mxAOSystem_app<realT>::CAllRaw()
+{
+   for(int i=0;i< aosys.fit_mn_max(); ++i)
+   {
+      std::cout << i << " " << aosys.C0(i,0, false) << " " << aosys.C1(i,0, false) << " " << aosys.C2(i,0, false) << " " << aosys.C4(i,0, false);
+      std::cout << " " << aosys.C6(i,0, false) << " " << aosys.C7(i,0, false) << "\n";
+   }
+}
+
 
 template<typename realT>
 int mxAOSystem_app<realT>::ErrorBudget()
@@ -692,6 +744,81 @@ int mxAOSystem_app<realT>::Strehl()
    
    return 0;
 }
+
+template<typename realT>
+int mxAOSystem_app<realT>::temporalPSD()
+{
+   std::vector<realT> freq, psd;
+
+   mx::AO::fourierTemporalPSD<realT, aosysT> ftPSD;
+   ftPSD._aosys = &aosys;
+   
+   if(aosys.minTauWFS() <= 0)
+   {
+      std::cerr << "temporalPSD: You must set minTauWFS to be > 0 to specify loop frequency.\n";
+      return -1;
+   }
+   
+   if(dfreq <= 0)
+   {
+      std::cerr << "temporalPSD: You must set dfreq to be > 0 to specify frequency sampling.\n";
+      return -1;
+   }
+   
+   realT fs = 1.0/aosys.minTauWFS();
+   
+   mx::vectorScale(freq, 0.5*fs/dfreq, dfreq, dfreq);
+   psd.resize(freq.size());
+   
+   ftPSD.multiLayerPSD( psd, freq, k_m, k_n, 1, kmax);
+   
+   
+   for(int i=0; i < freq.size(); ++i)
+   {
+      std::cout << freq[i] << " " << psd[i] << "\n";
+   }
+   
+   return 0;
+}
+
+template<typename realT>
+int mxAOSystem_app<realT>::temporalPSDGrid()
+{
+   mx::AO::fourierTemporalPSD<realT, aosysT> ftPSD;
+   ftPSD._aosys = &aosys;
+   
+   if(gridDir == "")
+   {
+      std::cerr << "temporalPSDGrid: You must set gridDir.\n";
+      return -1;
+   }
+   
+   if(aosys.fit_mn_max() <= 0)
+   {
+      std::cerr << "temporalPSDGrid: You must set fit_mn_max to be > 0.\n";
+      return -1;
+   }
+   
+
+   if(dfreq <= 0)
+   {
+      std::cerr << "temporalPSDGrid: You must set dfreq to be > 0 to specify frequency sampling.\n";
+      return -1;
+   }
+   
+   if(aosys.minTauWFS() <= 0)
+   {
+      std::cerr << "temporalPSDGrid: You must set minTauWFS to be > 0 to specify loop frequency.\n";
+      return -1;
+   }
+   
+   realT fs = 1.0/aosys.minTauWFS();
+   
+   ftPSD.makePSDGrid( gridDir, aosys.fit_mn_max(), dfreq, fs, 0);
+   
+   return 0;
+}
+
 
 int main(int argc, char ** argv)
 {
