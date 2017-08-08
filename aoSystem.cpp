@@ -30,24 +30,25 @@ class mxAOSystem_app : public mx::application
 {
 
 public:
-   typedef _realT realT;
+   typedef _realT realT; ///<Real floating point type for calculations
 
-   typedef Eigen::Array<realT, -1,-1> imageT;
+   typedef Eigen::Array<realT, -1,-1> imageT; ///< The image type
    
-   typedef mx::AO::aoSystem<realT, mx::AO::vonKarmanSpectrum<realT>> aosysT;
+   typedef mx::AO::aoSystem<realT, mx::AO::vonKarmanSpectrum<realT>> aosysT; ///< The AO system type.
 
-   mxAOSystem_app();
-   
+   /// Default constructor
+   mxAOSystem_app(); 
+
+   /// Desctructor
    ~mxAOSystem_app();
    
 protected:
    
-   aosysT aosys;
+   aosysT aosys; ///< The ao system.
    
-   mx::AO::beta_p::wfs<realT> idealWFS;
-   mx::AO::beta_p::pywfsUnmod<realT> unmodPyWFS;
-   mx::AO::beta_p::pywfsModAsymptotic<realT> asympModPyWFS;
-   
+   mx::AO::beta_p::wfs<realT> idealWFS; ///< An ideal WFS
+   mx::AO::beta_p::pywfsUnmod<realT> unmodPyWFS; ///< An unmodulated Pyramid WFS 
+   mx::AO::beta_p::pywfsModAsymptotic<realT> asympModPyWFS; ///< A modulated Pyramid WFS in its asymptotic limit
    
    realT lam_0;
    
@@ -163,6 +164,7 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("H"            ,"", ""      , mx::argType::None,     "atmosphere", "H",            false, "real", "atmospheric scale heights [m]");
    config.add("v_wind"       ,"", "v_wind", mx::argType::Required, "atmosphere", "v_wind",       false, "real", "Mean windspeed (5/3 momement), rescales layers [m/s]");
    config.add("z_mean"       ,"", "z_mean", mx::argType::Required, "atmosphere", "z_mean",       false, "real", "Mean layer height (5/3 momemnt), rescales layers [m/s]");
+   config.add("subTipTilt"   ,"", "subTipTilt", mx::argType::Required, "atmosphere", "subTipTilt",       false, "bool", "If set to true, the Tip/Tilt component is subtracted from the PSD.");
    
    //AO System configuration
    config.add("wfs"          ,"", "wfs"        , mx::argType::Required, "system", "wfs",     false, "string", "The WFS type: idealWFS, unmodPyWFS, asympModPyWFS");
@@ -287,6 +289,11 @@ void mxAOSystem_app<realT>::loadConfig()
       aosys.atm.z_mean(config.get<realT>("z_mean"));
    }
 
+   if(config.isSet("subTipTilt"))
+   {
+      aosys.psd.subTipTilt(config.get<bool>("subTiptilt"));
+   }
+   
    /**********************************************************/
    /* System                                                 */
    /**********************************************************/
