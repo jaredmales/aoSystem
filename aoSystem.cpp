@@ -14,6 +14,8 @@
 #define MX_APP_DEFAULT_configPathLocal "aoSystem.conf"
 
 #include <mx/app/application.hpp>
+#include <mx/fft/fftwEnvironment.hpp>
+
 #include <mx/ao/analysis/aoSystem.hpp>
 #include <mx/ao/analysis/aoPSDs.hpp>
 #include <mx/ao/analysis/aoWFS.hpp>
@@ -913,6 +915,7 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
 
 int main(int argc, char ** argv)
 {
+   mx::fftwEnvironment<double> fftwEnv;
  
    mxAOSystem_app<double> aosysA;
    
