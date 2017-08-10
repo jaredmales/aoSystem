@@ -34,7 +34,7 @@ public:
 
    typedef Eigen::Array<realT, -1,-1> imageT; ///< The image type
    
-   typedef mx::AO::aoSystem<realT, mx::AO::vonKarmanSpectrum<realT>> aosysT; ///< The AO system type.
+   typedef mx::AO::analysis::aoSystem<realT, mx::AO::analysis::vonKarmanSpectrum<realT>> aosysT; ///< The AO system type.
 
    /// Default constructor
    mxAOSystem_app(); 
@@ -46,9 +46,9 @@ protected:
    
    aosysT aosys; ///< The ao system.
    
-   mx::AO::beta_p::wfs<realT> idealWFS; ///< An ideal WFS
-   mx::AO::beta_p::pywfsUnmod<realT> unmodPyWFS; ///< An unmodulated Pyramid WFS 
-   mx::AO::beta_p::pywfsModAsymptotic<realT> asympModPyWFS; ///< A modulated Pyramid WFS in its asymptotic limit
+   mx::AO::analysis::wfs<realT> idealWFS; ///< An ideal WFS
+   mx::AO::analysis::pywfsUnmod<realT> unmodPyWFS; ///< An unmodulated Pyramid WFS 
+   mx::AO::analysis::pywfsModAsymptotic<realT> asympModPyWFS; ///< A modulated Pyramid WFS in its asymptotic limit
    
    realT lam_0;
    
@@ -106,6 +106,8 @@ protected:
    int temporalPSD();
    
    int temporalPSDGrid();
+   
+   int temporalPSDGridAnalyze();
 };
 
 template<typename realT>
@@ -164,7 +166,11 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("H"            ,"", ""      , mx::argType::None,     "atmosphere", "H",            false, "real", "atmospheric scale heights [m]");
    config.add("v_wind"       ,"", "v_wind", mx::argType::Required, "atmosphere", "v_wind",       false, "real", "Mean windspeed (5/3 momement), rescales layers [m/s]");
    config.add("z_mean"       ,"", "z_mean", mx::argType::Required, "atmosphere", "z_mean",       false, "real", "Mean layer height (5/3 momemnt), rescales layers [m/s]");
-   config.add("subTipTilt"   ,"", "subTipTilt", mx::argType::Required, "atmosphere", "subTipTilt",       false, "bool", "If set to true, the Tip/Tilt component is subtracted from the PSD.");
+   
+   //PSD Configuration
+   config.add("subTipTilt"    ,"", "subTipTilt",    mx::argType::Required, "PSD", "subTipTilt",    false, "bool", "If set to true, the Tip/Tilt component is subtracted from the PSD.");
+   config.add("scintillation" ,"", "scintillation", mx::argType::Required, "PSD", "scintillation", false, "bool", "If set to true, then scintillation is included in the PSD.");
+   config.add("component"     ,"", "component",     mx::argType::Required, "PSD", "component",     false, "string", "Can be phase [default], amplitude, or dispersion.");
    
    //AO System configuration
    config.add("wfs"          ,"", "wfs"        , mx::argType::Required, "system", "wfs",     false, "string", "The WFS type: idealWFS, unmodPyWFS, asympModPyWFS");
@@ -289,10 +295,33 @@ void mxAOSystem_app<realT>::loadConfig()
       aosys.atm.z_mean(config.get<realT>("z_mean"));
    }
 
+   /**********************************************************/
+   /* PSD                                                    */
+   /**********************************************************/
    if(config.isSet("subTipTilt"))
    {
       aosys.psd.subTipTilt(config.get<bool>("subTiptilt"));
    }
+   
+   if(config.isSet("scintillation"))
+   {
+      aosys.psd.scintillation(config.get<bool>("scintillation"));
+   }
+   
+   if(config.isSet("component"))
+   {
+      std::string comp = config.get<std::string>("component");
+      
+      if(comp == "phase") aosys.psd.component(mx::AO::analysis::PSDComponent::phase);
+      else if(comp == "amplitude") aosys.psd.component(mx::AO::analysis::PSDComponent::amplitude);
+      else if(comp == "dispPhase") aosys.psd.component(mx::AO::analysis::PSDComponent::dispPhase);
+      else if(comp == "dispAmplitude") aosys.psd.component(mx::AO::analysis::PSDComponent::dispAmplitude);
+      else
+      {
+         
+      }
+   }
+   
    
    /**********************************************************/
    /* System                                                 */
@@ -508,6 +537,10 @@ int mxAOSystem_app<realT>::execute()
    {
       rv = temporalPSDGrid();
    }
+   else if (mode == "temporalPSDGridAnalyze")
+   {
+      rv = temporalPSDGridAnalyze();
+   }
    else
    {
       std::cerr << "Unknown mode: " << mode << "\n";
@@ -545,7 +578,7 @@ int mxAOSystem_app<realT>::C_MapCon( const std::string & mapFile,
       }
    }
    
-   mx::AO::varmapToImage(im, map, psf);
+   mx::AO::analysis::varmapToImage(im, map, psf);
    
    for(int i=0; i< mnMap; ++i)
    {
@@ -757,7 +790,7 @@ int mxAOSystem_app<realT>::temporalPSD()
 {
    std::vector<realT> freq, psd;
 
-   mx::AO::fourierTemporalPSD<realT, aosysT> ftPSD;
+   mx::AO::analysis::fourierTemporalPSD<realT, aosysT> ftPSD;
    ftPSD._aosys = &aosys;
    
    if(aosys.minTauWFS() <= 0)
@@ -791,7 +824,7 @@ int mxAOSystem_app<realT>::temporalPSD()
 template<typename realT>
 int mxAOSystem_app<realT>::temporalPSDGrid()
 {
-   mx::AO::fourierTemporalPSD<realT, aosysT> ftPSD;
+   mx::AO::analysis::fourierTemporalPSD<realT, aosysT> ftPSD;
    ftPSD._aosys = &aosys;
    
    if(gridDir == "")
@@ -826,6 +859,33 @@ int mxAOSystem_app<realT>::temporalPSDGrid()
    return 0;
 }
 
+template<typename realT>
+int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
+{
+   mx::AO::analysis::fourierTemporalPSD<realT, aosysT> ftPSD;
+   ftPSD._aosys = &aosys;
+   
+   if(gridDir == "")
+   {
+      std::cerr << "temporalPSDGrid: You must set gridDir.\n";
+      return -1;
+   }
+   
+   if(aosys.fit_mn_max() <= 0)
+   {
+      std::cerr << "temporalPSDGrid: You must set fit_mn_max to be > 0.\n";
+      return -1;
+   }
+      
+   int mnCon = 24;
+   int lpNc = 100;
+   std::vector<realT> mags({0});
+   std::vector<int> inttimes({1});
+   
+   ftPSD.analyzePSDGrid( gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, inttimes); 
+   
+   
+}
 
 int main(int argc, char ** argv)
 {
