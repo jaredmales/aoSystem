@@ -68,6 +68,10 @@ protected:
    realT k_m;
    realT k_n;
    std::string gridDir; ///<The directory for writing the grid of PSDs.
+   std::string subDir; ///< The sub-directory of gridDir where to write the analysis results.
+   int lpNc; ///< Number of linear predictor coefficients.  If <= 1 then not used.
+   std::vector<int> intTimes; ///< The integration times, in units of minTauWFS, to analyze.
+
    
    virtual void setupConfig();
 
@@ -132,7 +136,8 @@ mxAOSystem_app<realT>::mxAOSystem_app()
    kmax = 0;
    k_m = 1;
    k_n = 0;
-
+   lpNc = 0;
+   intTimes = {1};
 }
 
 template<typename realT>
@@ -189,7 +194,7 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("ncp_wfe"      ,"", "ncp_wfe"    , mx::argType::Required, "system", "ncp_wfe",     false, "real", "NCP WFE between 1 lambda/D and fit_mn_max [rad^2]");
    config.add("ncp_alpha"    ,"", "ncp_alpha"  , mx::argType::Required, "system", "ncp_alpha",   false, "real", "PSD index for NCP WFE");
    config.add("starMag"      ,"", "starMag"    , mx::argType::Required,  "system", "starMag",     false, "real", "Star magnitude");
-   config.add("starMags"     ,"", "starMags"    , mx::argType::Required,  "system", "starMags",     false, "real", "A vector of star magnitudes");
+   config.add("starMags"     ,"", "starMags"    , mx::argType::Required,  "system", "starMags",     false, "real vector", "A vector of star magnitudes");
    
    //Temporal configuration
    config.add("kmax"     ,"", "kmax"    , mx::argType::Required,  "temporal", "kmax",     false, "real", "Maximum frequency at which to explicitly calculate PSDs.");
@@ -197,8 +202,9 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("k_m"     ,"", "k_m"    , mx::argType::Required,  "temporal", "k_m",     false, "real", "The spatial frequency m index.");
    config.add("k_n"     ,"", "k_n"    , mx::argType::Required,  "temporal", "k_n",     false, "real", "The spatial frequency n index.");
    config.add("gridDir"     ,"", "gridDir"    , mx::argType::Required,  "temporal", "gridDir",     false, "string", "The directory to store the grid of PSDs.");
-   
-   
+   config.add("subDir"     ,"", "subDir"    , mx::argType::Required,  "temporal", "subDir",     false, "string", "The directory to store the analysis results.");
+   config.add("lpNc"      ,"", "lpNc",    mx::argType::Required,  "temporal", "lpNc",     false, "int", "The number of linear prediction coefficients to use (if <= 1 ignored)");      
+   config.add("intTimes"      ,"", "intTimes",    mx::argType::Required,  "temporal", "intTimes",     false, "int vector", "Integration times in units of minTauWFS");
    
 }
 
@@ -457,7 +463,10 @@ void mxAOSystem_app<realT>::loadConfig()
    config.get(k_n, "k_n");
    
    config.get(gridDir, "gridDir");
-   
+   config.get(subDir, "subDir");
+   config.get(lpNc, "lpNc");
+   config.get(intTimes, "intTimes");
+
 }
 
 
@@ -867,22 +876,37 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
    
    if(gridDir == "")
    {
-      std::cerr << "temporalPSDGrid: You must set gridDir.\n";
+      std::cerr << "temporalPSDGridAnalyze: You must set gridDir.\n";
+      return -1;
+   }
+   
+   if(subDir == "")
+   {
+      std::cerr << "temporalPSDGridAnalyze: You must set subDir.\n";
       return -1;
    }
    
    if(aosys.fit_mn_max() <= 0)
    {
-      std::cerr << "temporalPSDGrid: You must set fit_mn_max to be > 0.\n";
+      std::cerr << "temporalPSDGridAnalyze: You must set fit_mn_max to be > 0.\n";
       return -1;
    }
       
-   int mnCon = 24;
-   int lpNc = 100;
-   std::vector<realT> mags({0});
-   std::vector<int> inttimes({1});
+   int mnCon = aosys.D()/aosys.d_min()/2;
    
-   ftPSD.analyzePSDGrid( gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, inttimes); 
+
+   std::vector<realT> mags;
+   
+   if(starMags.size() == 0)
+   {
+      mags = { aosys.starMag() };
+   }
+   else
+   {
+      mags = starMags;
+   }
+   
+   ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, intTimes); 
    
    
 }
