@@ -291,7 +291,7 @@ void mxAOSystem_app<realT>::loadConfig()
 
    if(config.isSet("subTipTilt"))
    {
-      aosys.psd.subTipTilt(config.get<bool>("subTiptilt"));
+      aosys.psd.subTipTilt(config.get<bool>("subTipTilt"));
    }
    
    /**********************************************************/
