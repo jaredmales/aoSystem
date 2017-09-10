@@ -818,7 +818,7 @@ int mxAOSystem_app<realT>::temporalPSD()
    
    realT fs = 1.0/aosys.minTauWFS();
    
-   mx::vectorScale(freq, 0.5*fs/dfreq, dfreq, dfreq);
+   mx::math::vectorScale(freq, 0.5*fs/dfreq, dfreq, dfreq);
    psd.resize(freq.size());
    
    ftPSD.multiLayerPSD( psd, freq, k_m, k_n, 1, kmax);
