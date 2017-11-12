@@ -12,7 +12,7 @@ Note: I have installed this on CentOS6 and 7, and Ubuntu 16.04 and 17.04.  I hav
 
 2) Build:
 
-Once you have setup the mxlib build system (which just means setting up environment variables to point to mx.makefile.inc), you can build aoSystem with:
+Once you have setup the mxlib build system (which just means setting up environment variables to point to mx.makefile and mx.makefile.inc), you can build aoSystem with:
 
 make -B -f $MXMAKEFILEINC t=aoSystem
 
