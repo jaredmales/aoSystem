@@ -1,2 +1,30 @@
 A program to analyze an astronomical adaptive optics system.
 
+1) Installation:
+
+This depends on "mxlib", my library of c++ code.  I am constantly changing/updating/extending mxlib for other projects, so I recommend checking out the "aoSystem" branch like so:
+
+git clone https://github.com/jaredmales/mxlib.git -b aoSystem --single-branch ./
+
+Run that command in the directory you want as the top-level directory of mxlib.  Then follow the remaining installation instructions at: https://jaredmales.github.io/mxlib/group__installation.html
+
+Note: I have installed this on CentOS6 and 7, and Ubuntu 16.04 and 17.04.  I have never tried it on a Mac -- let me know how it goes!
+
+2) Build:
+
+Once you have setup the mxlib build system (which just means setting up environment variables to point to mx.makefile.inc), you can build aoSystem with:
+
+make -B -f $MXMAKEFILEINC t=aoSystem
+
+3) Run:
+
+Using the example config file, you can run the program with
+
+./aoSystem -c example.conf  
+
+See the documentation in example.conf.  Command line options can be interrogated with
+
+./aosystem -h
+
+
+
