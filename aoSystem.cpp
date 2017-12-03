@@ -151,7 +151,7 @@ template<typename realT>
 void mxAOSystem_app<realT>::setupConfig()
 {
    //App config
-   config.add("mode"        ,"m", "mode" , mx::argType::Required, "", "mode",     false,  "string", "Mode of calculation: C2Raw, C2Map, ErrorBudget, Strehl");
+   config.add("mode"        ,"m", "mode" , mx::argType::Required, "", "mode",     false,  "string", "Mode of calculation: C<N>Raw, C<N>Map, ErrorBudget, Strehl, temporalPSD, temporalPSDGrid, temporalPSDGridAnalyze");
    config.add("setupOutFile"        ,"", "setupOutFile" , mx::argType::Required, "", "setupOutFile", false, "string", "Filename for output of setup data");
 
    config.add("wfeUnits"        ,"", "wfeUnits" , mx::argType::Required, "", "wfeUnits", false, "string", "Units for WFE in ErrorBudget: rad or nm");
