@@ -605,6 +605,14 @@ int mxAOSystem_app<realT>::C_MapCon( const std::string & mapFile,
 template<typename realT>
 int mxAOSystem_app<realT>::C0Raw()
 {
+   imageT map;
+   
+   map.resize( mnMap*2+1, mnMap*2 + 1);
+   aosys.C0Map(map);
+   
+   mx::improc::fitsFile<realT> ff;
+   ff.write("C0Raw.fits", map);
+   
    for(int i=0;i< aosys.fit_mn_max(); ++i)
    {
       std::cout << i << " " << aosys.C0(i,0, false) << "\n";
@@ -627,6 +635,14 @@ int mxAOSystem_app<realT>::C0Map()
 template<typename realT>
 int mxAOSystem_app<realT>::C1Raw()
 {
+   imageT map;
+   
+   map.resize( mnMap*2+1, mnMap*2 + 1);
+   aosys.C1Map(map);
+   
+   mx::improc::fitsFile<realT> ff;
+   ff.write("C1Raw.fits", map);
+   
    for(int i=0;i< aosys.fit_mn_max(); ++i)
    {
       std::cout << i << " " << aosys.C1(i,0, false) << "\n";
@@ -649,6 +665,14 @@ int mxAOSystem_app<realT>::C1Map()
 template<typename realT>
 int mxAOSystem_app<realT>::C2Raw()
 {
+   imageT map;
+   
+   map.resize( mnMap*2+1, mnMap*2 + 1);
+   aosys.C2Map(map);
+   
+   mx::improc::fitsFile<realT> ff;
+   ff.write("C2Raw.fits", map);
+   
    for(int i=0;i< aosys.fit_mn_max(); ++i)
    {
       std::cout << i << " " << aosys.C2(i,0, false) << "\n";
@@ -671,6 +695,14 @@ int mxAOSystem_app<realT>::C2Map()
 template<typename realT>
 int mxAOSystem_app<realT>::C4Raw()
 {
+   imageT map;
+   
+   map.resize( mnMap*2+1, mnMap*2 + 1);
+   aosys.C4Map(map);
+   
+   mx::improc::fitsFile<realT> ff;
+   ff.write("C4Raw.fits", map);
+   
    for(int i=0;i< aosys.fit_mn_max(); ++i)
    {
       std::cout << i << " " << aosys.C4(i,0, false) << "\n";
@@ -693,6 +725,14 @@ int mxAOSystem_app<realT>::C4Map()
 template<typename realT>
 int mxAOSystem_app<realT>::C6Raw()
 {
+   imageT map;
+   
+   map.resize( mnMap*2+1, mnMap*2 + 1);
+   aosys.C6Map(map);
+   
+   mx::improc::fitsFile<realT> ff;
+   ff.write("C6Raw.fits", map);
+   
    for(int i=0;i< aosys.fit_mn_max(); ++i)
    {
       std::cout << i << " " << aosys.C6(i,0, false) << "\n";
@@ -716,6 +756,14 @@ int mxAOSystem_app<realT>::C6Map()
 template<typename realT>
 int mxAOSystem_app<realT>::C7Raw()
 {
+   imageT map;
+   
+   map.resize( mnMap*2+1, mnMap*2 + 1);
+   aosys.C7Map(map);
+   
+   mx::improc::fitsFile<realT> ff;
+   ff.write("C7Raw.fits", map);
+   
    for(int i=0;i< aosys.fit_mn_max(); ++i)
    {
       std::cout << i << " " << aosys.C7(i,0, false) << "\n";
