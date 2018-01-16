@@ -105,6 +105,8 @@ protected:
    
    int CAllRaw();
    
+   int CProfAll();
+   
    int ErrorBudget();
    
    int Strehl();
@@ -151,7 +153,7 @@ template<typename realT>
 void mxAOSystem_app<realT>::setupConfig()
 {
    //App config
-   config.add("mode"        ,"m", "mode" , mx::argType::Required, "", "mode",     false,  "string", "Mode of calculation: C<N>Raw, C<N>Map, ErrorBudget, Strehl, temporalPSD, temporalPSDGrid, temporalPSDGridAnalyze");
+   config.add("mode"        ,"m", "mode" , mx::argType::Required, "", "mode",     false,  "string", "Mode of calculation: C<N>Raw, C<N>Map, CAllRaw, CProfAll, ErrorBudget, Strehl, temporalPSD, temporalPSDGrid, temporalPSDGridAnalyze");
    config.add("setupOutFile"        ,"", "setupOutFile" , mx::argType::Required, "", "setupOutFile", false, "string", "Filename for output of setup data");
 
    config.add("wfeUnits"        ,"", "wfeUnits" , mx::argType::Required, "", "wfeUnits", false, "string", "Units for WFE in ErrorBudget: rad or nm");
@@ -532,6 +534,10 @@ int mxAOSystem_app<realT>::execute()
    {
       rv = CAllRaw();
    }
+   else if (mode == "CProfAll")
+   {
+      rv = CProfAll();
+   }
    else if (mode == "ErrorBudget")
    {
       rv = ErrorBudget();
@@ -793,6 +799,50 @@ int mxAOSystem_app<realT>::CAllRaw()
    }
 }
 
+template<typename realT>
+int mxAOSystem_app<realT>::CProfAll()
+{
+   imageT map, im0, im1, im2, im4, im6, im7;
+
+   map.resize( mnMap*2+1, mnMap*2 + 1);
+   
+   imageT psf;
+   
+   psf.resize(map.rows(),map.cols());
+   for(int i=0;i<psf.rows();++i)
+   {
+      for(int j=0;j<psf.cols();++j)
+      {
+         psf(i,j) = mx::math::func::airyPattern(sqrt( pow( i-floor(.5*psf.rows()),2) + pow(j-floor(.5*psf.cols()),2)));
+      }
+   }
+   
+   aosys.C0Map(map);
+   mx::AO::analysis::varmapToImage(im0, map, psf);
+   
+   aosys.C1Map(map);
+   mx::AO::analysis::varmapToImage(im1, map, psf);
+
+   aosys.C2Map(map);
+   mx::AO::analysis::varmapToImage(im2, map, psf);
+   
+   aosys.C4Map(map);
+   mx::AO::analysis::varmapToImage(im4, map, psf);
+   
+   aosys.C6Map(map);
+   mx::AO::analysis::varmapToImage(im6, map, psf);
+   
+   aosys.C7Map(map);
+   mx::AO::analysis::varmapToImage(im7, map, psf);
+   
+   std::cout << "#PSF-convolved PSF profiles.\n";
+   std::cout << "#Sep    C0    C1    C2    C4     C6    C7\n";
+   for(int i=0;i< mnMap; ++i)
+   {
+      std::cout << i << " " << im0( mnMap+1, mnMap+1 + i) << " " << im1( mnMap+1, mnMap+1 + i) << " " << im2( mnMap+1, mnMap+1 + i) << " ";
+      std::cout << im4( mnMap+1, mnMap+1 + i) << " " << im6( mnMap+1, mnMap+1 + i) << " " << im7( mnMap+1, mnMap+1 + i) << "\n";      
+   }
+}
 
 template<typename realT>
 int mxAOSystem_app<realT>::ErrorBudget()
