@@ -550,6 +550,7 @@ int mxAOSystem_app<realT>::execute()
    }
    else if (mode == "temporalPSDGridAnalyze")
    {
+      std::cerr << "1\n";
       rv = temporalPSDGridAnalyze();
    }
    else
@@ -907,7 +908,9 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
    {
       mags = starMags;
    }
-   
+  
+   std::cerr << "2\n";
+ 
    ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, intTimes); 
    
    
