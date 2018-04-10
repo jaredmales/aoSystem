@@ -1016,7 +1016,7 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
 
 int main(int argc, char ** argv)
 {
-   mx::fftwEnvironment<double> fftwEnv;
+   mx::fftwEnvironment<double,false> fftwEnv;
  
    mxAOSystem_app<double> aosysA;
    
