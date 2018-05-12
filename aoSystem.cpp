@@ -1,4 +1,28 @@
+/** \file aoSystem.cpp
+  * \author Jared R. Males (jaredmales@gmail.com)
+  * \brief Application class and main definition for the aoSystem app.
+  * \ingroup files
+  * 
+  */
 
+//***********************************************************************//
+// Copyright 2018 Jared R. Males (jaredmales@gmail.com)
+//
+// This file is part of aoSystem.
+//
+// aoSystem is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// aoSystem is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with aoSystem.  If not, see <http://www.gnu.org/licenses/>.
+//***********************************************************************//
 
 
 #include <iostream>
@@ -70,10 +94,9 @@ protected:
    realT k_m;
    realT k_n;
    std::string gridDir; ///<The directory for writing the grid of PSDs.
-   std::string subDir; ///< The sub-directory of gridDir where to write the analysis results.
-   int lpNc; ///< Number of linear predictor coefficients.  If <= 1 then not used.
-   std::vector<int> intTimes; ///< The integration times, in units of minTauWFS, to analyze.
-
+   std::string subDir;  ///< The sub-directory of gridDir where to write the analysis results.
+   int lpNc;            ///< Number of linear predictor coefficients.  If <= 1 then not used.
+   bool writePSDs {false};      ///< Flag controlling whether output temporal PSDs are written to disk or not.
    
    virtual void setupConfig();
 
@@ -141,7 +164,6 @@ mxAOSystem_app<realT>::mxAOSystem_app()
    k_m = 1;
    k_n = 0;
    lpNc = 0;
-   intTimes = {1};
 }
 
 template<typename realT>
@@ -208,7 +230,7 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("gridDir"     ,"", "gridDir"    , mx::argType::Required,  "temporal", "gridDir",     false, "string", "The directory to store the grid of PSDs.");
    config.add("subDir"     ,"", "subDir"    , mx::argType::Required,  "temporal", "subDir",     false, "string", "The directory to store the analysis results.");
    config.add("lpNc"      ,"", "lpNc",    mx::argType::Required,  "temporal", "lpNc",     false, "int", "The number of linear prediction coefficients to use (if <= 1 ignored)");      
-   config.add("intTimes"      ,"", "intTimes",    mx::argType::Required,  "temporal", "intTimes",     false, "int vector", "Integration times in units of minTauWFS");
+   config.add("writePSDs", "", "writePSDs", mx::argType::True, "temporal", "writePSDs", false, "none", "Flag.  If set then output PSDs are written to disk.");
    
 }
 
@@ -461,15 +483,16 @@ void mxAOSystem_app<realT>::loadConfig()
    /**********************************************************/
    /* Temporal PSDs                                          */
    /**********************************************************/
-   config.get(kmax, "kmax");
-   config.get(dfreq, "dfreq");
-   config.get(k_m, "k_m");
-   config.get(k_n, "k_n");
+   config(kmax, "kmax");
+   config(dfreq, "dfreq");
+   config(k_m, "k_m");
+   config(k_n, "k_n");
    
-   config.get(gridDir, "gridDir");
-   config.get(subDir, "subDir");
-   config.get(lpNc, "lpNc");
-   config.get(intTimes, "intTimes");
+   config(gridDir, "gridDir");
+   config(subDir, "subDir");
+   config(lpNc, "lpNc");
+   
+   config(writePSDs, "writePSDs");
 
 }
 
@@ -897,7 +920,7 @@ int mxAOSystem_app<realT>::Strehl()
 template<typename realT>
 int mxAOSystem_app<realT>::temporalPSD()
 {
-   std::vector<realT> freq, psd;
+   std::vector<realT> freq, psdOL, psdN, psdSI, psdLP;
 
    mx::AO::analysis::fourierTemporalPSD<realT, aosysT> ftPSD;
    ftPSD._aosys = &aosys;
@@ -917,15 +940,59 @@ int mxAOSystem_app<realT>::temporalPSD()
    realT fs = 1.0/aosys.minTauWFS();
    
    mx::math::vectorScale(freq, 0.5*fs/dfreq, dfreq, dfreq);
-   psd.resize(freq.size());
+   psdOL.resize(freq.size());
    
-   ftPSD.multiLayerPSD( psd, freq, k_m, k_n, 1, kmax);
+   ftPSD.multiLayerPSD( psdOL, freq, k_m, k_n, 1, kmax);
    
+   //Create WFS Noise PSD
+   psdN.resize(freq.size());
+   mx::AO::analysis::wfsNoisePSD<realT>( psdN, aosys.beta_p(k_m,k_n), aosys.Fg(), (1.0/fs), aosys.npix_wfs(), aosys.Fbg(), aosys.ron_wfs());
    
+   //optimize
+   mx::AO::analysis::clAOLinearPredictor<realT> tflp;
+            
+   mx::AO::analysis::clGainOpt<realT> go_si(1.0/fs, 1.5/fs);
+   mx::AO::analysis::clGainOpt<realT> go_lp(1.0/fs, 1.5/fs);
+            
+   go_si.f(freq);
+   
+   realT gmaxSI = 0;
+   realT varSI;
+   realT goptSI = go_si.optGainOpenLoop(varSI, psdOL, psdN, gmaxSI);
+
+   //Only bother if number of coefficients is > 1.
+   realT goptLP = -1;
+   realT varLP = -1;
+   if(lpNc > 1)
+   {
+      go_lp.f(freq);
+      realT gmaxLP;
+      tflp.regularizeCoefficients( gmaxLP, goptLP, varLP, go_lp, psdOL, psdN, lpNc);      
+   }
+   
+   std::cout << "# aoSystem single temporal PSD\n";
+   std::cout << "#    var OL = " << "\n";
+   std::cout << "#    opt-gain SI = " << goptSI << "\n";
+   std::cout << "#    var SI = " << varSI << "\n";
+   std::cout << "#    LP Num. coeff = " << lpNc << "\n";
+   std::cout << "#    opt-gain LP = " << goptLP << "\n";
+   std::cout << "#    var LP = " << varLP << "\n";
+   std::cout << "#################################################################\n";
+   std::cout << "# freq    PSD-OL    PSD-N    ETF-SI  NTF-SI   ETF-LP   NTF-LP \n";
+   
+   realT ETF_SI, NTF_SI, ETF_LP = -1, NTF_LP =-1;
    for(int i=0; i < freq.size(); ++i)
    {
-      std::cout << freq[i] << " " << psd[i] << "\n";
+      go_si.clTF2(ETF_SI, NTF_SI, i, goptSI);
+      
+      if(goptLP != -1)
+      {
+         go_lp.clTF2(ETF_LP, NTF_LP, i, goptLP);
+      }
+      
+      std::cout << freq[i] << " " << psdOL[i] << " " << psdN[i] << " " << ETF_SI << " " << NTF_SI << " " << ETF_LP << " " << NTF_LP << "\n";
    }
+   
    
    return 0;
 }
@@ -1006,7 +1073,7 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
       mags = starMags;
    }
    
-   ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, intTimes); 
+   ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, writePSDs); 
    
    
 }
