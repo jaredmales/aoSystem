@@ -579,6 +579,7 @@ int mxAOSystem_app<realT>::execute()
    }
    else if (mode == "temporalPSDGridAnalyze")
    {
+      std::cerr << "1\n";
       rv = temporalPSDGridAnalyze();
    }
    else
@@ -1072,15 +1073,22 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
    {
       mags = starMags;
    }
-   
-   ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, writePSDs); 
+// <<<<<<< HEAD
+//    
+    ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, writePSDs); 
+// =======
+  
+//    std::cerr << "2\n";
+ 
+//   ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, intTimes); 
+// >>>>>>> 890f7c9998fe7ff1edd0076891a566306507d3d1
    
    
 }
 
 int main(int argc, char ** argv)
 {
-   mx::fftwEnvironment<double> fftwEnv;
+   mx::fftwEnvironment<double,false> fftwEnv;
  
    mxAOSystem_app<double> aosysA;
    
