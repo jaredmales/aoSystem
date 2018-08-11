@@ -1083,9 +1083,7 @@ int main(int argc, char ** argv)
  
    mxAOSystem_app<double> aosysA;
    
-   aosysA.main(argc, argv);
-   
-
+   return aosysA.main(argc, argv);
    
 }
 
