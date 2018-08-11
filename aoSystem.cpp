@@ -1073,16 +1073,8 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
    {
       mags = starMags;
    }
-// <<<<<<< HEAD
-//    
-    ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, writePSDs); 
-// =======
-  
-//    std::cerr << "2\n";
- 
-//   ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, intTimes); 
-// >>>>>>> 890f7c9998fe7ff1edd0076891a566306507d3d1
-   
+
+   ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, writePSDs); 
    
 }
 
