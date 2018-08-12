@@ -237,7 +237,6 @@ void mxAOSystem_app<realT>::setupConfig()
 template<typename realT>
 void mxAOSystem_app<realT>::loadConfig()
 {
-   realT tmp;
    std::vector<realT> vecTmp;
    
    
@@ -629,7 +628,7 @@ int mxAOSystem_app<realT>::C_MapCon( const std::string & mapFile,
    mx::improc::fitsFile<realT> ff;
    ff.write(mapFile, im);
 
-   
+   return 0;
 }
 
 template<typename realT>
@@ -647,6 +646,8 @@ int mxAOSystem_app<realT>::C0Raw()
    {
       std::cout << i << " " << aosys.C0(i,0, false) << "\n";
    }
+   
+   return 0;
 }
 
 template<typename realT>
@@ -660,6 +661,7 @@ int mxAOSystem_app<realT>::C0Map()
    
    C_MapCon("C0Map.fits", map);
    
+   return 0;
 }
 
 template<typename realT>
@@ -677,6 +679,8 @@ int mxAOSystem_app<realT>::C1Raw()
    {
       std::cout << i << " " << aosys.C1(i,0, false) << "\n";
    }
+   
+   return 0;
 }
 
 template<typename realT>
@@ -690,6 +694,7 @@ int mxAOSystem_app<realT>::C1Map()
    
    C_MapCon("C1Map.fits", map);
    
+   return 0;
 }
 
 template<typename realT>
@@ -707,6 +712,8 @@ int mxAOSystem_app<realT>::C2Raw()
    {
       std::cout << i << " " << aosys.C2(i,0, false) << "\n";
    }
+   
+   return 0;
 }
 
 template<typename realT>
@@ -720,6 +727,7 @@ int mxAOSystem_app<realT>::C2Map()
    
    C_MapCon("C2Map.fits", map);
    
+   return 0;
 }
 
 template<typename realT>
@@ -737,6 +745,8 @@ int mxAOSystem_app<realT>::C4Raw()
    {
       std::cout << i << " " << aosys.C4(i,0, false) << "\n";
    }
+   
+   return 0;
 }
 
 template<typename realT>
@@ -750,6 +760,7 @@ int mxAOSystem_app<realT>::C4Map()
    
    C_MapCon("C4Map.fits", map);
    
+   return 0;
 }
 
 template<typename realT>
@@ -767,6 +778,9 @@ int mxAOSystem_app<realT>::C6Raw()
    {
       std::cout << i << " " << aosys.C6(i,0, false) << "\n";
    }
+   
+   return 0;
+   
 }
 
 template<typename realT>
@@ -780,6 +794,8 @@ int mxAOSystem_app<realT>::C6Map()
    
    C_MapCon("C6Map.fits", map);
    
+   return 0;
+
 }
 
 
@@ -798,6 +814,9 @@ int mxAOSystem_app<realT>::C7Raw()
    {
       std::cout << i << " " << aosys.C7(i,0, false) << "\n";
    }
+   
+   return 0;
+   
 }
 
 template<typename realT>
@@ -811,6 +830,7 @@ int mxAOSystem_app<realT>::C7Map()
    
    C_MapCon("C7Map.fits", map);
    
+   return 0;
 }
 
 template<typename realT>
@@ -821,6 +841,8 @@ int mxAOSystem_app<realT>::CAllRaw()
       std::cout << i << " " << aosys.C0(i,0, false) << " " << aosys.C1(i,0, false) << " " << aosys.C2(i,0, false) << " " << aosys.C4(i,0, false);
       std::cout << " " << aosys.C6(i,0, false) << " " << aosys.C7(i,0, false) << "\n";
    }
+   
+   return 0;
 }
 
 template<typename realT>
@@ -866,6 +888,8 @@ int mxAOSystem_app<realT>::CProfAll()
       std::cout << i << " " << im0( mnMap+1, mnMap+1 + i) << " " << im1( mnMap+1, mnMap+1 + i) << " " << im2( mnMap+1, mnMap+1 + i) << " ";
       std::cout << im4( mnMap+1, mnMap+1 + i) << " " << im6( mnMap+1, mnMap+1 + i) << " " << im7( mnMap+1, mnMap+1 + i) << "\n";      
    }
+   
+   return 0;
 }
 
 template<typename realT>
@@ -891,7 +915,7 @@ int mxAOSystem_app<realT>::ErrorBudget()
    {
       std::cout << "#mag     Measurement     Time-delay      Fitting    Chr-Scint-OPD      Chr-Index   Disp-Ansio-OPD  NCP-error         Strehl\n";
       
-      for(int i=0; i< starMags.size(); ++i)
+      for(size_t i=0; i< starMags.size(); ++i)
       {
          aosys.starMag(starMags[i]);
          std::cout << starMags[i] << "\t    ";
@@ -982,7 +1006,7 @@ int mxAOSystem_app<realT>::temporalPSD()
    std::cout << "# freq    PSD-OL    PSD-N    ETF-SI  NTF-SI   ETF-LP   NTF-LP \n";
    
    realT ETF_SI, NTF_SI, ETF_LP = -1, NTF_LP =-1;
-   for(int i=0; i < freq.size(); ++i)
+   for(size_t i=0; i < freq.size(); ++i)
    {
       go_si.clTF2(ETF_SI, NTF_SI, i, goptSI);
       
