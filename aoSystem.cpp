@@ -93,10 +93,11 @@ protected:
    realT kmax;
    realT k_m;
    realT k_n;
-   std::string gridDir; ///<The directory for writing the grid of PSDs.
-   std::string subDir;  ///< The sub-directory of gridDir where to write the analysis results.
-   int lpNc;            ///< Number of linear predictor coefficients.  If <= 1 then not used.
-   bool writePSDs {false};      ///< Flag controlling whether output temporal PSDs are written to disk or not.
+   std::string gridDir;       ///<The directory for writing the grid of PSDs.
+   std::string subDir;       ///< The sub-directory of gridDir where to write the analysis results.
+   int lpNc;                 ///< Number of linear predictor coefficients.  If <= 1 then not used.
+   int m_lifetimeTrials {0}; ///< Number of trials to use for calculating speckle lifetimes.  If 0, lifetimes are not calcualted.
+   bool writePSDs {false};   ///< Flag controlling whether output temporal PSDs are written to disk or not.
    
    virtual void setupConfig();
 
@@ -229,8 +230,9 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("k_n"     ,"", "k_n"    , mx::argType::Required,  "temporal", "k_n",     false, "real", "The spatial frequency n index.");
    config.add("gridDir"     ,"", "gridDir"    , mx::argType::Required,  "temporal", "gridDir",     false, "string", "The directory to store the grid of PSDs.");
    config.add("subDir"     ,"", "subDir"    , mx::argType::Required,  "temporal", "subDir",     false, "string", "The directory to store the analysis results.");
-   config.add("lpNc"      ,"", "lpNc",    mx::argType::Required,  "temporal", "lpNc",     false, "int", "The number of linear prediction coefficients to use (if <= 1 ignored)");      
-   config.add("writePSDs", "", "writePSDs", mx::argType::True, "temporal", "writePSDs", false, "none", "Flag.  If set then output PSDs are written to disk.");
+   config.add("lpNc"      ,"", "lpNc",    mx::argType::Required,  "temporal", "lpNc",     false, "int", "The number of linear prediction coefficients to use (if <= 1 ignored)");   
+   config.add("lifetimeTrials", "", "lifetimeTrials", mx::argType::Required, "temporal", "lifetimeTrials", false, "int", "Number of trials to use for calculating speckle lifetimes.  If 0, lifetimes are not calcualted.");
+   config.add("writePSDs", "", "writePSDs", mx::argType::True, "temporal", "writePSDs", false, "bool", "Flag.  If set then output PSDs are written to disk.");
    
 }
 
@@ -490,7 +492,8 @@ void mxAOSystem_app<realT>::loadConfig()
    config(gridDir, "gridDir");
    config(subDir, "subDir");
    config(lpNc, "lpNc");
-   
+
+   config(m_lifetimeTrials, "lifetimeTrials");   
    config(writePSDs, "writePSDs");
 
 }
@@ -1098,7 +1101,7 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
       mags = starMags;
    }
    
-   return ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, writePSDs); 
+   return ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, m_lifetimeTrials, writePSDs); 
    
 }
 
