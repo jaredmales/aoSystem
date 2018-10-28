@@ -1,0 +1,11 @@
+
+
+TARGET=aoSystem
+
+NEED_BLAS=yes
+NEED_SOFA=yes
+NEED_LEVMAR=no
+NEED_XPA=no
+
+include $(MXMAKEFILE)
+
