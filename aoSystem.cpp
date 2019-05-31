@@ -45,6 +45,9 @@
 #include <mx/ao/analysis/aoWFS.hpp>
 #include <mx/ao/analysis/varmapToImage.hpp>
 #include <mx/ao/analysis/fourierTemporalPSD.hpp>
+
+using namespace mx::app;
+
 ///
 /**
   * Star Magnitudes:
@@ -52,7 +55,7 @@
   * - if <b>starMags</b>, a vector, is set, then many results are provided for each magnitude. E.g. <b>--mode</b>=ErrorBudget will produce a table.
   */  
 template<typename _realT>
-class mxAOSystem_app : public mx::application
+class mxAOSystem_app : public mx::app::application
 {
 
 public:
@@ -176,63 +179,64 @@ template<typename realT>
 void mxAOSystem_app<realT>::setupConfig()
 {
    //App config
-   config.add("mode"        ,"m", "mode" , mx::argType::Required, "", "mode",     false,  "string", "Mode of calculation: C<N>Raw, C<N>Map, CAllRaw, CProfAll, ErrorBudget, Strehl, temporalPSD, temporalPSDGrid, temporalPSDGridAnalyze");
-   config.add("setupOutFile"        ,"", "setupOutFile" , mx::argType::Required, "", "setupOutFile", false, "string", "Filename for output of setup data");
+   config.add("mode"        ,"m", "mode" , argType::Required, "", "mode",     false,  "string", "Mode of calculation: C<N>Raw, C<N>Map, CAllRaw, CProfAll, ErrorBudget, Strehl, temporalPSD, temporalPSDGrid, temporalPSDGridAnalyze");
+   config.add("setupOutFile"        ,"", "setupOutFile" , argType::Required, "", "setupOutFile", false, "string", "Filename for output of setup data");
 
-   config.add("wfeUnits"        ,"", "wfeUnits" , mx::argType::Required, "", "wfeUnits", false, "string", "Units for WFE in ErrorBudget: rad or nm");
+   config.add("wfeUnits"        ,"", "wfeUnits" , argType::Required, "", "wfeUnits", false, "string", "Units for WFE in ErrorBudget: rad or nm");
 
-   config.add("mnMap"        ,"", "mnMap" , mx::argType::Required, "", "mnMap",     false,  "string", "Maximum spatial frequency index to include in maps.");
+   config.add("mnMap"        ,"", "mnMap" , argType::Required, "", "mnMap",     false,  "string", "Maximum spatial frequency index to include in maps.");
    
    //Load a model
-   config.add("model"        ,"", "model" , mx::argType::Required, "", "model", false, "string", "Model to load: Guyon2005, MagAOX, or GMagAOX");
+   config.add("model"        ,"", "model" , argType::Required, "", "model", false, "string", "Model to load: Guyon2005, MagAOX, or GMagAOX");
    
    //Atmosphere configuration
-   config.add("lam_0"        ,"", "lam_0" , mx::argType::Required, "atmosphere", "lam_0",        false, "real", "The reference wavlength for r_0 [m]");
-   config.add("r_0"          ,"", "r_0"   , mx::argType::Required, "atmosphere", "r_0",          false, "real", "Fried's parameter [m]");
-   config.add("L_0"          ,"", "L_0"   , mx::argType::Required, "atmosphere", "L_0",          false, "real", "Outer scale [m]");
-   config.add("layer_Cn2"    ,"", ""      , mx::argType::None,     "atmosphere", "layer_Cn2",    false, "real vector", "Layer Cn^2");  
-   config.add("layer_v_wind" ,"", ""      , mx::argType::None,     "atmosphere", "layer_v_wind", false, "real vector", "Layer wind speeds [m/s]");
-   config.add("layer_dir"    ,"", ""      , mx::argType::None,     "atmosphere", "layer_dir",    false, "real vector", "Layer wind directions [rad]");
-   config.add("layer_z"      ,"", ""      , mx::argType::None,     "atmosphere", "layer_z",      false, "real vector", "layer heights [m]");
-   config.add("h_obs"        ,"", ""      , mx::argType::None,     "atmosphere", "h_obs",        false, "real", "height of observatory [m]");
-   config.add("H"            ,"", ""      , mx::argType::None,     "atmosphere", "H",            false, "real", "atmospheric scale heights [m]");
-   config.add("v_wind"       ,"", "v_wind", mx::argType::Required, "atmosphere", "v_wind",       false, "real", "Mean windspeed (5/3 momement), rescales layers [m/s]");
-   config.add("z_mean"       ,"", "z_mean", mx::argType::Required, "atmosphere", "z_mean",       false, "real", "Mean layer height (5/3 momemnt), rescales layers [m/s]");
+   config.add("lam_0"        ,"", "lam_0" , argType::Required, "atmosphere", "lam_0",        false, "real", "The reference wavlength for r_0 [m]");
+   config.add("r_0"          ,"", "r_0"   , argType::Required, "atmosphere", "r_0",          false, "real", "Fried's parameter [m]");
+   config.add("L_0"          ,"", "L_0"   , argType::Required, "atmosphere", "L_0",          false, "real", "Outer scale [m]");
+   config.add("layer_Cn2"    ,"", ""      , argType::None,     "atmosphere", "layer_Cn2",    false, "real vector", "Layer Cn^2");  
+   config.add("layer_v_wind" ,"", ""      , argType::None,     "atmosphere", "layer_v_wind", false, "real vector", "Layer wind speeds [m/s]");
+   config.add("layer_dir"    ,"", ""      , argType::None,     "atmosphere", "layer_dir",    false, "real vector", "Layer wind directions [rad]");
+   config.add("layer_z"      ,"", ""      , argType::None,     "atmosphere", "layer_z",      false, "real vector", "layer heights [m]");
+   config.add("h_obs"        ,"", ""      , argType::None,     "atmosphere", "h_obs",        false, "real", "height of observatory [m]");
+   config.add("H"            ,"", ""      , argType::None,     "atmosphere", "H",            false, "real", "atmospheric scale heights [m]");
+   config.add("v_wind"       ,"", "v_wind", argType::Required, "atmosphere", "v_wind",       false, "real", "Mean windspeed (5/3 momement), rescales layers [m/s]");
+   config.add("z_mean"       ,"", "z_mean", argType::Required, "atmosphere", "z_mean",       false, "real", "Mean layer height (5/3 momemnt), rescales layers [m/s]");
    
    //PSD Configuration
-   config.add("subTipTilt"    ,"", "subTipTilt",    mx::argType::Required, "PSD", "subTipTilt",    false, "bool", "If set to true, the Tip/Tilt component is subtracted from the PSD.");
-   config.add("scintillation" ,"", "scintillation", mx::argType::Required, "PSD", "scintillation", false, "bool", "If set to true, then scintillation is included in the PSD.");
-   config.add("component"     ,"", "component",     mx::argType::Required, "PSD", "component",     false, "string", "Can be phase [default], amplitude, or dispersion.");
+   config.add("subTipTilt"    ,"", "subTipTilt",    argType::Required, "PSD", "subTipTilt",    false, "bool", "If set to true, the Tip/Tilt component is subtracted from the PSD.");
+   config.add("scintillation" ,"", "scintillation", argType::Required, "PSD", "scintillation", false, "bool", "If set to true, then scintillation is included in the PSD.");
+   config.add("component"     ,"", "component",     argType::Required, "PSD", "component",     false, "string", "Can be phase [default], amplitude, or dispersion.");
    
    //AO System configuration
-   config.add("wfs"          ,"", "wfs"        , mx::argType::Required, "system", "wfs",     false, "string", "The WFS type: idealWFS, unmodPyWFS, asympModPyWFS");
-   config.add("D"            ,"", "D"          , mx::argType::Required, "system", "D",           false, "real", "The telescope diameter [m]");
-   config.add("d_min"        ,"", "d_min"      , mx::argType::Required, "system", "d_min",       false, "real", "The minimum actuator spacing [m]");
-   config.add("F0"           ,"", "F0"         , mx::argType::Required, "system", "F0",          false, "real", "Zero-mag photon flux, [photons/sec]");     
-   config.add("lam_wfs"      ,"", "lam_wfs"    , mx::argType::Required, "system", "lam_wfs",     false, "real", "WFS wavelength [m]" );
-   config.add("npix_wfs"     ,"", "npix_wfs"   , mx::argType::Required, "system", "npix_wfs",    false, "real", "The number of pixels in the WFS");
-   config.add("ron_wfs"      ,"", "ron_wfs"    , mx::argType::Required, "system", "ron_wfs",     false, "real", "WFS readout noise [photons/read]");
-   config.add("Fbg"          ,"", "Fbg"        , mx::argType::Required, "system", "Fbg",         false, "real", "Background counts, [counts/pix/sec]");
-   config.add("minTauWFS"    ,"", "minTauWFS"  , mx::argType::Required, "system", "minTauWFS",   false, "real", "Minimum WFS integration time [s]");
-   config.add("deltaTau"     ,"", "deltaTau"   , mx::argType::Required, "system", "deltaTau",    false, "real", "Loop delay [s]");
-   config.add("lam_sci"      ,"", "lam_sci"    , mx::argType::Required, "system", "lam_sci",     false, "real", "Science wavelength [m]");
-   config.add("zeta"         ,"", "zeta"       , mx::argType::Required, "system", "zeta",        false, "real", "Zenith distance [rad]");
-   config.add("fit_mn_max"   ,"", "fit_mn_max" , mx::argType::Required, "system", "fit_mn_max",  false, "real", "Maximum spatial frequency index to use for analysis");
-   config.add("ncp_wfe"      ,"", "ncp_wfe"    , mx::argType::Required, "system", "ncp_wfe",     false, "real", "NCP WFE between 1 lambda/D and fit_mn_max [rad^2]");
-   config.add("ncp_alpha"    ,"", "ncp_alpha"  , mx::argType::Required, "system", "ncp_alpha",   false, "real", "PSD index for NCP WFE");
-   config.add("starMag"      ,"", "starMag"    , mx::argType::Required,  "system", "starMag",     false, "real", "Star magnitude");
-   config.add("starMags"     ,"", "starMags"    , mx::argType::Required,  "system", "starMags",     false, "real vector", "A vector of star magnitudes");
+   config.add("wfs"          ,"", "wfs"        , argType::Required, "system", "wfs",     false, "string", "The WFS type: idealWFS, unmodPyWFS, asympModPyWFS");
+   config.add("D"            ,"", "D"          , argType::Required, "system", "D",           false, "real", "The telescope diameter [m]");
+   config.add("d_min"        ,"", "d_min"      , argType::Required, "system", "d_min",       false, "real", "The minimum actuator spacing [m]");
+   config.add("F0"           ,"", "F0"         , argType::Required, "system", "F0",          false, "real", "Zero-mag photon flux, [photons/sec]");     
+   config.add("lam_wfs"      ,"", "lam_wfs"    , argType::Required, "system", "lam_wfs",     false, "real", "WFS wavelength [m]" );
+   config.add("npix_wfs"     ,"", "npix_wfs"   , argType::Required, "system", "npix_wfs",    false, "real", "The number of pixels in the WFS");
+   config.add("ron_wfs"      ,"", "ron_wfs"    , argType::Required, "system", "ron_wfs",     false, "real", "WFS readout noise [photons/read]");
+   config.add("Fbg"          ,"", "Fbg"        , argType::Required, "system", "Fbg",         false, "real", "Background counts, [counts/pix/sec]");\
+   config.add("tauWFS"       ,"", "tauWFS"     , argType::Required, "system", "tauWFS",      false, "real", "WFS integration time [s]");
+   config.add("minTauWFS"    ,"", "minTauWFS"  , argType::Required, "system", "minTauWFS",   false, "real", "Minimum WFS integration time [s]");
+   config.add("deltaTau"     ,"", "deltaTau"   , argType::Required, "system", "deltaTau",    false, "real", "Loop delay [s]");
+   config.add("lam_sci"      ,"", "lam_sci"    , argType::Required, "system", "lam_sci",     false, "real", "Science wavelength [m]");
+   config.add("zeta"         ,"", "zeta"       , argType::Required, "system", "zeta",        false, "real", "Zenith distance [rad]");
+   config.add("fit_mn_max"   ,"", "fit_mn_max" , argType::Required, "system", "fit_mn_max",  false, "real", "Maximum spatial frequency index to use for analysis");
+   config.add("ncp_wfe"      ,"", "ncp_wfe"    , argType::Required, "system", "ncp_wfe",     false, "real", "NCP WFE between 1 lambda/D and fit_mn_max [rad^2]");
+   config.add("ncp_alpha"    ,"", "ncp_alpha"  , argType::Required, "system", "ncp_alpha",   false, "real", "PSD index for NCP WFE");
+   config.add("starMag"      ,"", "starMag"    , argType::Required,  "system", "starMag",     false, "real", "Star magnitude");
+   config.add("starMags"     ,"", "starMags"    , argType::Required,  "system", "starMags",     false, "real vector", "A vector of star magnitudes");
    
    //Temporal configuration
-   config.add("kmax"     ,"", "kmax"    , mx::argType::Required,  "temporal", "kmax",     false, "real", "Maximum frequency at which to explicitly calculate PSDs.");
-   config.add("dfreq"     ,"", "dfreq"    , mx::argType::Required,  "temporal", "dfreq",     false, "real", "Spacing of frequencies in the analysis.");
-   config.add("k_m"     ,"", "k_m"    , mx::argType::Required,  "temporal", "k_m",     false, "real", "The spatial frequency m index.");
-   config.add("k_n"     ,"", "k_n"    , mx::argType::Required,  "temporal", "k_n",     false, "real", "The spatial frequency n index.");
-   config.add("gridDir"     ,"", "gridDir"    , mx::argType::Required,  "temporal", "gridDir",     false, "string", "The directory to store the grid of PSDs.");
-   config.add("subDir"     ,"", "subDir"    , mx::argType::Required,  "temporal", "subDir",     false, "string", "The directory to store the analysis results.");
-   config.add("lpNc"      ,"", "lpNc",    mx::argType::Required,  "temporal", "lpNc",     false, "int", "The number of linear prediction coefficients to use (if <= 1 ignored)");   
-   config.add("lifetimeTrials", "", "lifetimeTrials", mx::argType::Required, "temporal", "lifetimeTrials", false, "int", "Number of trials to use for calculating speckle lifetimes.  If 0, lifetimes are not calcualted.");
-   config.add("writePSDs", "", "writePSDs", mx::argType::True, "temporal", "writePSDs", false, "bool", "Flag.  If set then output PSDs are written to disk.");
+   config.add("kmax"     ,"", "kmax"    , argType::Required,  "temporal", "kmax",     false, "real", "Maximum frequency at which to explicitly calculate PSDs.");
+   config.add("dfreq"     ,"", "dfreq"    , argType::Required,  "temporal", "dfreq",     false, "real", "Spacing of frequencies in the analysis.");
+   config.add("k_m"     ,"", "k_m"    , argType::Required,  "temporal", "k_m",     false, "real", "The spatial frequency m index.");
+   config.add("k_n"     ,"", "k_n"    , argType::Required,  "temporal", "k_n",     false, "real", "The spatial frequency n index.");
+   config.add("gridDir"     ,"", "gridDir"    , argType::Required,  "temporal", "gridDir",     false, "string", "The directory to store the grid of PSDs.");
+   config.add("subDir"     ,"", "subDir"    , argType::Required,  "temporal", "subDir",     false, "string", "The directory to store the analysis results.");
+   config.add("lpNc"      ,"", "lpNc",    argType::Required,  "temporal", "lpNc",     false, "int", "The number of linear prediction coefficients to use (if <= 1 ignored)");   
+   config.add("lifetimeTrials", "", "lifetimeTrials", argType::Required, "temporal", "lifetimeTrials", false, "int", "Number of trials to use for calculating speckle lifetimes.  If 0, lifetimes are not calcualted.");
+   config.add("writePSDs", "", "writePSDs", argType::True, "temporal", "writePSDs", false, "bool", "Flag.  If set then output PSDs are written to disk.");
    
 }
 
@@ -283,49 +287,67 @@ void mxAOSystem_app<realT>::loadConfig()
    //layer Cn2
    if( config.isSet("layer_Cn2") )
    {
-      aosys.atm.layer_Cn2(config.get<std::vector<realT>>("layer_Cn2"), lam_0);
+      std::vector<realT> lcn2 = aosys.atm.layer_Cn2();
+      config(lcn2, "layer_Cn2");
+      aosys.atm.layer_Cn2(lcn2, lam_0);
    }
    
    //r_0
    if(config.isSet("r_0") )
    {
-      aosys.atm.r_0(config.get<realT>("r_0"), lam_0);
+      realT r_0;
+      config(r_0, "r_0");
+      aosys.atm.r_0(r_0, lam_0);
    }
    
    //Outer scale
    if(config.isSet("L_0") )
    {
-      aosys.atm.L_0(config.get<realT>("L_0"));
+      realT L_0;
+      config(L_0, "L_0");
+      aosys.atm.L_0(L_0);
    }
    
    //layer winds
    if( config.isSet("layer_v_wind") )
    {
-      aosys.atm.layer_v_wind(config.get<std::vector<realT>>("layer_v_wind"));
+      std::vector<realT> lvw = aosys.atm.layer_v_wind();
+      config(lvw, "layer_v_wind");
+      
+      aosys.atm.layer_v_wind(lvw);
    }
    
    //layer direction
    if( config.isSet("layer_dir") )
    {
-      aosys.atm.layer_dir(config.get<std::vector<realT>>("layer_dir"));
+      std::vector<realT> ld = aosys.atm.layer_dir();
+      config(ld, "layer_dir");
+      aosys.atm.layer_dir(ld);
    }
  
    if( config.isSet("layer_z") )
    {
-      aosys.atm.layer_z(config.get<std::vector<realT>>("layer_z"));
+      std::vector<realT> lz = aosys.atm.layer_z();
+      config(lz, "layer_z");
+      
+      aosys.atm.layer_z(lz);
    }
    
 
    //v_wind --> this rescales layer_v_wind
    if(config.isSet("v_wind") )
    {
-      aosys.atm.v_wind(config.get<realT>("v_wind"));
+      realT  vw = aosys.atm.v_wind();
+      config(vw, "v_wind");
+      aosys.atm.v_wind(vw);
    }
 
    //z_mean --> this rescales layer_z
    if(config.isSet("z_mean") )
    {
-      aosys.atm.z_mean(config.get<realT>("z_mean"));
+      realT zm = aosys.atm.z_mean();
+      config(zm, "z_mean");
+      aosys.atm.z_mean(zm);
    }
 
    /**********************************************************/
@@ -333,17 +355,24 @@ void mxAOSystem_app<realT>::loadConfig()
    /**********************************************************/
    if(config.isSet("subTipTilt"))
    {
-      aosys.psd.subTipTilt(config.get<bool>("subTipTilt"));
+      bool subtt;
+      config.get(subtt, "subTipTilt");
+      aosys.psd.subTipTilt(subtt);
    }
    
    if(config.isSet("scintillation"))
    {
-      aosys.psd.scintillation(config.get<bool>("scintillation"));
+      bool scint = aosys.psd.scintillation();
+      config(scint, "scintillation");
+      
+      aosys.psd.scintillation(scint);
    }
    
    if(config.isSet("component"))
    {
-      std::string comp = config.get<std::string>("component");
+      std::string comp;
+      
+      config(comp, "component");
       
       if(comp == "phase") aosys.psd.component(mx::AO::analysis::PSDComponent::phase);
       else if(comp == "amplitude") aosys.psd.component(mx::AO::analysis::PSDComponent::amplitude);
@@ -387,98 +416,128 @@ void mxAOSystem_app<realT>::loadConfig()
    //diameter
    if(config.isSet("D") )
    {
-      aosys.D(config.get<realT>("D"));
+      realT D = aosys.D();
+      config(D, "D");
+      aosys.D(D);
    }
    
    //d_min
    if(config.isSet("d_min") )
    {
-      aosys.d_min(config.get<realT>("d_min"));
+      realT d_min = aosys.d_min();
+      config(d_min, "d_min");
+      aosys.d_min(d_min);
    }
       
    //F0
    if(config.isSet("F0") )
    {
-      aosys.F0(config.get<realT>("F0"));
+      realT F0 = aosys.F0();
+      config(F0, "F0");
+      aosys.F0(F0);
    }
    
    
    //lam_wfs
    if(config.isSet("lam_wfs") )
    {
-      aosys.lam_wfs(config.get<realT>("lam_wfs"));
+      realT lam_wfs = aosys.lam_wfs();
+      config(lam_wfs, "lam_wfs");
+      
+      aosys.lam_wfs(lam_wfs);
    }
    
    //npix_wfs
    if(config.isSet("npix_wfs") )
    {
-      aosys.npix_wfs(config.get<realT>("npix_wfs"));
+      realT npix_wfs = aosys.npix_wfs();
+      config(npix_wfs, "npix_wfs");
+      aosys.npix_wfs(npix_wfs);
    }
       
    //ron_wfs
    if(config.isSet("ron_wfs") )
    {
-      aosys.ron_wfs(config.get<realT>("ron_wfs"));
+      realT rwfs = aosys.ron_wfs();
+      config( rwfs, "ron_wfs");
+      aosys.ron_wfs(rwfs);
    }
       
    //Fbg
-   if(config.isSet("Fbg") )
-   {
-      aosys.Fbg(config.get<realT>("Fbg"));
-   }
-   
+   realT Fbg = aosys.Fbg();
+   config( Fbg, "Fbg");
+   aosys.Fbg(Fbg);
    
    //minTauWFS
-   if(config.isSet("minTauWFS") )
-   {
-      aosys.minTauWFS(config.get<realT>("minTauWFS"));
-   }
-      
+   realT mtwfs = aosys.minTauWFS();
+   config( mtwfs, "minTauWFS");
+   aosys.minTauWFS(mtwfs);
+    
+   //tauWFS
+   realT twfs = aosys.minTauWFS();
+   config( twfs, "tauWFS");
+   aosys.minTauWFS(twfs);
+   
+   
    //deltaTau
    if(config.isSet("deltaTau") )
    {
-      aosys.deltaTau(config.get<realT>("deltaTau"));
+      realT dt = aosys.deltaTau();
+      config( dt, "deltaTau");
+      aosys.deltaTau(dt);
    }
       
    //lam_sci
    if(config.isSet("lam_sci") )
    {
-      aosys.lam_sci(config.get<realT>("lam_sci"));
+      realT lsci = aosys.lam_sci();
+      config( lsci, "lam_sci");
+      aosys.lam_sci( lsci );
    }
    
    //zeta
    if(config.isSet("zeta") )
    {
-      aosys.zeta(config.get<realT>("zeta"));
+      realT zeta = aosys.zeta();
+      config(zeta , "zeta");
+      aosys.zeta(zeta);
    }
    
    //fit_mn_max
    if(config.isSet("fit_mn_max") )
    {
-      aosys.fit_mn_max(config.get<realT>("fit_mn_max"));
+      realT fmnm = aosys.fit_mn_max();
+      config( fmnm, "fit_mn_max");
+      aosys.fit_mn_max(fmnm);
    }
    
    //ncp_wfe
    if(config.isSet("ncp_wfe") )
    {
-      aosys.ncp_wfe(config.get<realT>("ncp_wfe"));
+      realT nwfe = aosys.ncp_wfe();
+      config( nwfe, "ncp_wfe");
+      aosys.ncp_wfe(nwfe);
    }
     
    //ncp_alpha
    if(config.isSet("ncp_alpha") )
    {
-      aosys.ncp_alpha(config.get<realT>("ncp_alpha"));
+      realT na = aosys.ncp_alpha();
+      config( na, "ncp_alpha");
+      aosys.ncp_alpha( na );
    }
       
    //star_mag
    if(config.isSet("starMag") )
    {
-      aosys.starMag(config.get<realT>("starMag"));
+      realT smag = aosys.starMag();
+      config( smag, "starMag");
+      aosys.starMag( smag );
    }
    
    if( config.isSet("starMags") )
    {
-      starMags = config.get<std::vector<realT>>("starMags");
+      config( starMags, "starMags");
    }
    
    /**********************************************************/
@@ -496,6 +555,27 @@ void mxAOSystem_app<realT>::loadConfig()
    config(m_lifetimeTrials, "lifetimeTrials");   
    config(writePSDs, "writePSDs");
 
+   
+   if(config.m_unusedConfigs.size() > 0)
+   {
+      std::cerr<< "****************************************************\n";
+      std::cerr << "WARNING: unrecognized config options:\n";
+      
+      for( auto it = config.m_unusedConfigs.begin(); it != config.m_unusedConfigs.end(); ++it )
+      {
+         std::cerr << "   " << it->second.name;
+         if(config.m_sources) std::cerr << " [" << it->second.sources[0] <<"]\n";
+         else std::cerr << "\n";
+      }
+      
+      std::cerr<< "****************************************************\n";
+   }
+   
+   if(config.nonOptions.size() > 0)
+   {
+      std::cerr<< "****************************************************\n";
+      std::cerr << "WARNING: unrecognized command line arguments\n";
+   }
 }
 
 
@@ -951,7 +1031,7 @@ int mxAOSystem_app<realT>::temporalPSD()
    std::vector<realT> freq, psdOL, psdN, psdSI, psdLP;
 
    mx::AO::analysis::fourierTemporalPSD<realT, aosysT> ftPSD;
-   ftPSD._aosys = &aosys;
+   ftPSD.m_aosys = &aosys;
    
    if(aosys.minTauWFS() <= 0)
    {
@@ -1029,7 +1109,7 @@ template<typename realT>
 int mxAOSystem_app<realT>::temporalPSDGrid()
 {
    mx::AO::analysis::fourierTemporalPSD<realT, aosysT> ftPSD;
-   ftPSD._aosys = &aosys;
+   ftPSD.m_aosys = &aosys;
    
    if(gridDir == "")
    {
@@ -1067,7 +1147,7 @@ template<typename realT>
 int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
 {
    mx::AO::analysis::fourierTemporalPSD<realT, aosysT> ftPSD;
-   ftPSD._aosys = &aosys;
+   ftPSD.m_aosys = &aosys;
    
    if(gridDir == "")
    {
