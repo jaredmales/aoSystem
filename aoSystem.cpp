@@ -476,7 +476,7 @@ void mxAOSystem_app<realT>::loadConfig()
    //tauWFS
    realT twfs = aosys.tauWFS();
    config( twfs, "tauWFS");
-   aosys.minTauWFS(twfs);
+   aosys.tauWFS(twfs);
    
    
    //deltaTau
