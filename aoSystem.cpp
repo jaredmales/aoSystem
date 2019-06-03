@@ -208,27 +208,28 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("component"     ,"", "component",     argType::Required, "PSD", "component",     false, "string", "Can be phase [default], amplitude, or dispersion.");
    
    //AO System configuration
-   config.add("wfs"          ,"", "wfs"        , argType::Required, "system", "wfs",         false, "string", "The WFS type: idealWFS, unmodPyWFS, asympModPyWFS");
-   config.add("D"            ,"", "D"          , argType::Required, "system", "D",           false, "real", "The telescope diameter [m]");
-   config.add("d_min"        ,"", "d_min"      , argType::Required, "system", "d_min",       false, "real", "The minimum actuator spacing [m]");
-   config.add("optd"         ,"", "optd"       , argType::Optional, "system", "optd",        false, "bool", "Whether or not the actuator spacing is optimized");
-   config.add("optd_delta"   ,"", "optd_delta" , argType::Required, "system", "optd_delta",  false, "bool", "The fractional change from d_min used in optimization.  Set to 1 (default) for integer binnings, > 1 for finer sampling.");
-   config.add("F0"           ,"", "F0"         , argType::Required, "system", "F0",          false, "real", "Zero-mag photon flux, [photons/sec]");     
-   config.add("lam_wfs"      ,"", "lam_wfs"    , argType::Required, "system", "lam_wfs",     false, "real", "WFS wavelength [m]" );
-   config.add("npix_wfs"     ,"", "npix_wfs"   , argType::Required, "system", "npix_wfs",    false, "real", "The number of pixels in the WFS");
-   config.add("ron_wfs"      ,"", "ron_wfs"    , argType::Required, "system", "ron_wfs",     false, "real", "WFS readout noise [photons/read]");
-   config.add("Fbg"          ,"", "Fbg"        , argType::Required, "system", "Fbg",         false, "real", "Background counts, [counts/pix/sec]");\
-   config.add("tauWFS"       ,"", "tauWFS"     , argType::Required, "system", "tauWFS",      false, "real", "WFS integration time [s]");
-   config.add("minTauWFS"    ,"", "minTauWFS"  , argType::Required, "system", "minTauWFS",   false, "real", "Minimum WFS integration time [s]");
-   config.add("deltaTau"     ,"", "deltaTau"   , argType::Required, "system", "deltaTau",    false, "real", "Loop delay [s]");
-   config.add("optTau"       ,"", "optTau"     , argType::Optional, "system", "optTau",      false, "bool", "Whether or not the integration time is optimized");
-   config.add("lam_sci"      ,"", "lam_sci"    , argType::Required, "system", "lam_sci",     false, "real", "Science wavelength [m]");
-   config.add("zeta"         ,"", "zeta"       , argType::Required, "system", "zeta",        false, "real", "Zenith distance [rad]");
-   config.add("fit_mn_max"   ,"", "fit_mn_max" , argType::Required, "system", "fit_mn_max",  false, "real", "Maximum spatial frequency index to use for analysis");
-   config.add("ncp_wfe"      ,"", "ncp_wfe"    , argType::Required, "system", "ncp_wfe",     false, "real", "NCP WFE between 1 lambda/D and fit_mn_max [rad^2]");
-   config.add("ncp_alpha"    ,"", "ncp_alpha"  , argType::Required, "system", "ncp_alpha",   false, "real", "PSD index for NCP WFE");
-   config.add("starMag"      ,"", "starMag"    , argType::Required,  "system", "starMag",     false, "real", "Star magnitude");
-   config.add("starMags"     ,"", "starMags"    , argType::Required,  "system", "starMags",     false, "real vector", "A vector of star magnitudes");
+   config.add("wfs"           ,"", "wfs"           , argType::Required, "system", "wfs",            false, "string", "The WFS type: idealWFS, unmodPyWFS, asympModPyWFS");
+   config.add("D"             ,"", "D"             , argType::Required, "system", "D",              false, "real", "The telescope diameter [m]");
+   config.add("d_min"         ,"", "d_min"         , argType::Required, "system", "d_min",          false, "real", "The minimum actuator spacing [m]");
+   config.add("optd"          ,"", "optd"          , argType::Optional, "system", "optd",           false, "bool", "Whether or not the actuator spacing is optimized");
+   config.add("optd_delta"    ,"", "optd_delta"    , argType::Required, "system", "optd_delta",     false, "bool", "The fractional change from d_min used in optimization.  Set to 1 (default) for integer binnings, > 1 for finer sampling.");
+   config.add("F0"            ,"", "F0"            , argType::Required, "system", "F0",             false, "real", "Zero-mag photon flux, [photons/sec]");     
+   config.add("lam_wfs"       ,"", "lam_wfs"       , argType::Required, "system", "lam_wfs",        false, "real", "WFS wavelength [m]" );
+   config.add("npix_wfs"      ,"", "npix_wfs"      , argType::Required, "system", "npix_wfs",       false, "real", "The number of pixels in the WFS");
+   config.add("ron_wfs"       ,"", "ron_wfs"       , argType::Required, "system", "ron_wfs",        false, "real", "WFS readout noise [photons/read]");
+   config.add("Fbg"           ,"", "Fbg"           , argType::Required, "system", "Fbg",            false, "real", "Background counts, [counts/pix/sec]");\
+   config.add("tauWFS"        ,"", "tauWFS"        , argType::Required, "system", "tauWFS",         false, "real", "WFS integration time [s]");
+   config.add("minTauWFS"     ,"", "minTauWFS"     , argType::Required, "system", "minTauWFS",      false, "real", "Minimum WFS integration time [s]");
+   config.add("deltaTau"      ,"", "deltaTau"      , argType::Required, "system", "deltaTau",       false, "real", "Loop delay [s]");
+   config.add("optTau"        ,"", "optTau"        , argType::Optional, "system", "optTau",         false, "bool", "Whether or not the integration time is optimized");
+   config.add("lam_sci"       ,"", "lam_sci"       , argType::Required, "system", "lam_sci",        false, "real", "Science wavelength [m]");
+   config.add("zeta"          ,"", "zeta"          , argType::Required, "system", "zeta",           false, "real", "Zenith distance [rad]");
+   config.add("fit_mn_max"    ,"", "fit_mn_max"    , argType::Required, "system", "fit_mn_max",     false, "real", "Maximum spatial frequency index to use for analysis");
+   config.add("ncp_wfe"       ,"", "ncp_wfe"       , argType::Required, "system", "ncp_wfe",        false, "real", "NCP WFE between 1 lambda/D and fit_mn_max [rad^2]");
+   config.add("ncp_alpha"     ,"", "ncp_alpha"     , argType::Required, "system", "ncp_alpha",      false, "real", "PSD index for NCP WFE");
+   config.add("starMag"       ,"", "starMag"       , argType::Required,  "system", "starMag",       false, "real", "Star magnitude");
+   config.add("starMags"      ,"", "starMags"      , argType::Required,  "system", "starMags",      false, "real vector", "A vector of star magnitudes");
+   config.add("circularLimit" ,"", "circularLimit" , argType::Optional,  "system", "circularLimit", false, "bool", " Flag to indicate that the spatial frequency limit is circular, not square.");
    
    //Temporal configuration
    config.add("kmax"     ,"", "kmax"    , argType::Required,  "temporal", "kmax",     false, "real", "Maximum frequency at which to explicitly calculate PSDs.");
@@ -442,6 +443,14 @@ void mxAOSystem_app<realT>::loadConfig()
    realT optd_delta = aosys.optd_delta();
    config(optd_delta, "optd_delta");
    aosys.optd_delta(optd_delta);
+   
+   if(config.isSet("circularLimit"))
+   {
+      bool cl = true;
+      config(cl, "circularLimit");
+      aosys.circularLimit(cl);
+   }
+   std::cerr << "circularLimit: " << aosys.circularLimit() << "\n";
    
    //F0
    if(config.isSet("F0") )
