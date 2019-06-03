@@ -208,9 +208,11 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("component"     ,"", "component",     argType::Required, "PSD", "component",     false, "string", "Can be phase [default], amplitude, or dispersion.");
    
    //AO System configuration
-   config.add("wfs"          ,"", "wfs"        , argType::Required, "system", "wfs",     false, "string", "The WFS type: idealWFS, unmodPyWFS, asympModPyWFS");
+   config.add("wfs"          ,"", "wfs"        , argType::Required, "system", "wfs",         false, "string", "The WFS type: idealWFS, unmodPyWFS, asympModPyWFS");
    config.add("D"            ,"", "D"          , argType::Required, "system", "D",           false, "real", "The telescope diameter [m]");
    config.add("d_min"        ,"", "d_min"      , argType::Required, "system", "d_min",       false, "real", "The minimum actuator spacing [m]");
+   config.add("optd"         ,"", "optd"       , argType::Optional, "system", "optd",        false, "bool", "Whether or not the actuator spacing is optimized");
+   config.add("optd_delta"   ,"", "optd_delta" , argType::Required, "system", "optd_delta",  false, "bool", "The fractional change from d_min used in optimization.  Set to 1 (default) for integer binnings, > 1 for finer sampling.");
    config.add("F0"           ,"", "F0"         , argType::Required, "system", "F0",          false, "real", "Zero-mag photon flux, [photons/sec]");     
    config.add("lam_wfs"      ,"", "lam_wfs"    , argType::Required, "system", "lam_wfs",     false, "real", "WFS wavelength [m]" );
    config.add("npix_wfs"     ,"", "npix_wfs"   , argType::Required, "system", "npix_wfs",    false, "real", "The number of pixels in the WFS");
@@ -219,6 +221,7 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("tauWFS"       ,"", "tauWFS"     , argType::Required, "system", "tauWFS",      false, "real", "WFS integration time [s]");
    config.add("minTauWFS"    ,"", "minTauWFS"  , argType::Required, "system", "minTauWFS",   false, "real", "Minimum WFS integration time [s]");
    config.add("deltaTau"     ,"", "deltaTau"   , argType::Required, "system", "deltaTau",    false, "real", "Loop delay [s]");
+   config.add("optTau"       ,"", "optTau"     , argType::Optional, "system", "optTau",      false, "bool", "Whether or not the integration time is optimized");
    config.add("lam_sci"      ,"", "lam_sci"    , argType::Required, "system", "lam_sci",     false, "real", "Science wavelength [m]");
    config.add("zeta"         ,"", "zeta"       , argType::Required, "system", "zeta",        false, "real", "Zenith distance [rad]");
    config.add("fit_mn_max"   ,"", "fit_mn_max" , argType::Required, "system", "fit_mn_max",  false, "real", "Maximum spatial frequency index to use for analysis");
@@ -429,6 +432,17 @@ void mxAOSystem_app<realT>::loadConfig()
       aosys.d_min(d_min);
    }
       
+   if(config.isSet("optd"))
+   {
+      bool optd = true;
+      config(optd, "optd");
+      aosys.optd(optd);
+   }
+   
+   realT optd_delta = aosys.optd_delta();
+   config(optd_delta, "optd_delta");
+   aosys.optd_delta(optd_delta);
+   
    //F0
    if(config.isSet("F0") )
    {
@@ -480,13 +494,14 @@ void mxAOSystem_app<realT>::loadConfig()
    
    
    //deltaTau
-   if(config.isSet("deltaTau") )
-   {
-      realT dt = aosys.deltaTau();
-      config( dt, "deltaTau");
-      aosys.deltaTau(dt);
-   }
+   realT dt = aosys.deltaTau();
+   config( dt, "deltaTau");
+   aosys.deltaTau(dt);
       
+   bool optTau = aosys.optTau();
+   config(optTau, "optTau");
+   aosys.optTau(optTau);
+   
    //lam_sci
    if(config.isSet("lam_sci") )
    {
@@ -1000,6 +1015,7 @@ int mxAOSystem_app<realT>::ErrorBudget()
       
       for(size_t i=0; i< starMags.size(); ++i)
       {
+               
          aosys.starMag(starMags[i]);
          std::cout << starMags[i] << "\t    ";
          std::cout << sqrt(aosys.measurementError())*units << "\t   ";
@@ -1012,8 +1028,7 @@ int mxAOSystem_app<realT>::ErrorBudget()
          std::cout << aosys.strehl() << "\n";
       }
    }
-      
-      
+   
    return 0;
 }
 
