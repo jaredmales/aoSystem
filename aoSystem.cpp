@@ -217,6 +217,7 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("lam_wfs"       ,"", "lam_wfs"       , argType::Required, "system", "lam_wfs",        false, "real", "WFS wavelength [m]" );
    config.add("npix_wfs"      ,"", "npix_wfs"      , argType::Required, "system", "npix_wfs",       false, "real", "The number of pixels in the WFS");
    config.add("ron_wfs"       ,"", "ron_wfs"       , argType::Required, "system", "ron_wfs",        false, "real", "WFS readout noise [photons/read]");
+   config.add("bin_npix"      ,"", "bin_npix"      , argType::Required, "system", "bin_npix",       false, "bool", "Whether or not WFS pixels are re-binned along with actuator spacing optimization");
    config.add("Fbg"           ,"", "Fbg"           , argType::Required, "system", "Fbg",            false, "real", "Background counts, [counts/pix/sec]");\
    config.add("tauWFS"        ,"", "tauWFS"        , argType::Required, "system", "tauWFS",         false, "real", "WFS integration time [s]");
    config.add("minTauWFS"     ,"", "minTauWFS"     , argType::Required, "system", "minTauWFS",      false, "real", "Minimum WFS integration time [s]");
@@ -490,6 +491,14 @@ void mxAOSystem_app<realT>::loadConfig()
    realT Fbg = aosys.Fbg();
    config( Fbg, "Fbg");
    aosys.Fbg(Fbg);
+   
+   
+   if(config.isSet("bin_npix"))
+   {
+      bool bin_npix = true;
+      config(bin_npix, "bin_npix");
+      aosys.bin_npix(bin_npix);
+   }
    
    //minTauWFS
    realT mtwfs = aosys.minTauWFS();
@@ -1020,13 +1029,14 @@ int mxAOSystem_app<realT>::ErrorBudget()
    }
    else
    {
-      std::cout << "#mag     Measurement     Time-delay      Fitting    Chr-Scint-OPD      Chr-Index   Disp-Ansio-OPD  NCP-error         Strehl\n";
+      std::cout << "#mag     d_opt        Measurement     Time-delay      Fitting    Chr-Scint-OPD      Chr-Index   Disp-Ansio-OPD  NCP-error         Strehl\n";
       
       for(size_t i=0; i< starMags.size(); ++i)
       {
                
          aosys.starMag(starMags[i]);
          std::cout << starMags[i] << "\t    ";
+         std::cout << aosys.d_opt() << "\t  ";
          std::cout << sqrt(aosys.measurementError())*units << "\t   ";
          std::cout << sqrt(aosys.timeDelayError())*units << "\t ";
          std::cout << sqrt(aosys.fittingError())*units << "\t ";
