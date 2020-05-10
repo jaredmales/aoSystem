@@ -451,7 +451,6 @@ void mxAOSystem_app<realT>::loadConfig()
       config(cl, "circularLimit");
       aosys.circularLimit(cl);
    }
-   std::cerr << "circularLimit: " << aosys.circularLimit() << "\n";
    
    //F0
    if(config.isSet("F0") )
