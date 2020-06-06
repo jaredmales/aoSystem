@@ -93,7 +93,7 @@ protected:
    std::vector<realT> starMags;
    
    realT dfreq;
-   realT kmax;
+   realT fmax;
    realT k_m;
    realT k_n;
    std::string gridDir;       ///<The directory for writing the grid of PSDs.
@@ -164,7 +164,7 @@ mxAOSystem_app<realT>::mxAOSystem_app()
    mnMap = 50;
    
    dfreq = 0.1;
-   kmax = 0;
+   fmax = 0;
    k_m = 1;
    k_n = 0;
    lpNc = 0;
@@ -233,7 +233,7 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("circularLimit" ,"", "circularLimit" , argType::Optional,  "system", "circularLimit", false, "bool", " Flag to indicate that the spatial frequency limit is circular, not square.");
    
    //Temporal configuration
-   config.add("kmax"     ,"", "kmax"    , argType::Required,  "temporal", "kmax",     false, "real", "Maximum frequency at which to explicitly calculate PSDs.");
+   config.add("fmax"     ,"", "fmax"    , argType::Required,  "temporal", "fmax",     false, "real", "Maximum temporal frequency at which to explicitly calculate PSDs.  If 0 (default) this is based on highest wind peak.  A -17/3 power law is used above this frequency.");
    config.add("dfreq"     ,"", "dfreq"    , argType::Required,  "temporal", "dfreq",     false, "real", "Spacing of frequencies in the analysis.");
    config.add("k_m"     ,"", "k_m"    , argType::Required,  "temporal", "k_m",     false, "real", "The spatial frequency m index.");
    config.add("k_n"     ,"", "k_n"    , argType::Required,  "temporal", "k_n",     false, "real", "The spatial frequency n index.");
@@ -575,7 +575,7 @@ void mxAOSystem_app<realT>::loadConfig()
    /**********************************************************/
    /* Temporal PSDs                                          */
    /**********************************************************/
-   config(kmax, "kmax");
+   config(fmax, "fmax");
    config(dfreq, "dfreq");
    config(k_m, "k_m");
    config(k_n, "k_n");
@@ -1083,7 +1083,7 @@ int mxAOSystem_app<realT>::temporalPSD()
    mx::math::vectorScale(freq, 0.5*fs/dfreq, dfreq, dfreq);
    psdOL.resize(freq.size());
    
-   ftPSD.multiLayerPSD( psdOL, freq, k_m, k_n, 1, kmax);
+   ftPSD.multiLayerPSD( psdOL, freq, k_m, k_n, 1, fmax);
    
    //Create WFS Noise PSD
    psdN.resize(freq.size());
