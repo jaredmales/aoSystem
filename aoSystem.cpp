@@ -99,6 +99,7 @@ protected:
    std::string gridDir;       ///<The directory for writing the grid of PSDs.
    std::string subDir;       ///< The sub-directory of gridDir where to write the analysis results.
    int lpNc;                 ///< Number of linear predictor coefficients.  If <= 1 then not used.
+   bool m_uncontrolledLifetimes {false}; ///< Whether or not lifetimes are calcualated for uncontrolled modes.
    int m_lifetimeTrials {0}; ///< Number of trials to use for calculating speckle lifetimes.  If 0, lifetimes are not calcualted.
    bool writePSDs {false};   ///< Flag controlling whether output temporal PSDs are written to disk or not.
    
@@ -240,6 +241,7 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("gridDir"     ,"", "gridDir"    , argType::Required,  "temporal", "gridDir",     false, "string", "The directory to store the grid of PSDs.");
    config.add("subDir"     ,"", "subDir"    , argType::Required,  "temporal", "subDir",     false, "string", "The directory to store the analysis results.");
    config.add("lpNc"      ,"", "lpNc",    argType::Required,  "temporal", "lpNc",     false, "int", "The number of linear prediction coefficients to use (if <= 1 ignored)");   
+   config.add("uncontrolledLifetimes", "", "uncontrolledLifetimes", argType::Required, "temporal", "uncontrolledLifetimes", false, "bool", "If true, lifetimes are calculated for uncontrolled modes.  Default is false.");
    config.add("lifetimeTrials", "", "lifetimeTrials", argType::Required, "temporal", "lifetimeTrials", false, "int", "Number of trials to use for calculating speckle lifetimes.  If 0, lifetimes are not calcualted.");
    config.add("writePSDs", "", "writePSDs", argType::True, "temporal", "writePSDs", false, "bool", "Flag.  If set then output PSDs are written to disk.");
    
@@ -584,6 +586,7 @@ void mxAOSystem_app<realT>::loadConfig()
    config(subDir, "subDir");
    config(lpNc, "lpNc");
 
+   config(m_uncontrolledLifetimes, "uncontrolledLifetimes");
    config(m_lifetimeTrials, "lifetimeTrials");   
    config(writePSDs, "writePSDs");
 
@@ -1214,7 +1217,7 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
       mags = starMags;
    }
    
-   return ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, m_lifetimeTrials, writePSDs); 
+   return ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, m_lifetimeTrials, m_uncontrolledLifetimes, writePSDs); 
    
 }
 
