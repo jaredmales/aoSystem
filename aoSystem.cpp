@@ -227,6 +227,10 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("lam_sci"       ,"", "lam_sci"       , argType::Required, "system", "lam_sci",        false, "real", "Science wavelength [m]");
    config.add("zeta"          ,"", "zeta"          , argType::Required, "system", "zeta",           false, "real", "Zenith distance [rad]");
    config.add("fit_mn_max"    ,"", "fit_mn_max"    , argType::Required, "system", "fit_mn_max",     false, "real", "Maximum spatial frequency index to use for analysis");
+   
+   config.add("system.spatialFilter_ku", "", "system.spatialFilter_ku", argType::Required, "system", "spatialFilter_ku",     false, "real", "Spatial filter cutoff frequency in u [m^-1]");
+   config.add("system.spatialFilter_kv", "", "system.spatialFilter_kv", argType::Required, "system", "spatialFilter_kv",     false, "real", "Spatial filter cutoff frequency in v [m^-1]");
+   
    config.add("ncp_wfe"       ,"", "ncp_wfe"       , argType::Required, "system", "ncp_wfe",        false, "real", "NCP WFE between 1 lambda/D and fit_mn_max [rad^2]");
    config.add("ncp_alpha"     ,"", "ncp_alpha"     , argType::Required, "system", "ncp_alpha",      false, "real", "PSD index for NCP WFE");
    config.add("starMag"       ,"", "starMag"       , argType::Required,  "system", "starMag",       false, "real", "Star magnitude");
@@ -543,6 +547,22 @@ void mxAOSystem_app<realT>::loadConfig()
       realT fmnm = aosys.fit_mn_max();
       config( fmnm, "fit_mn_max");
       aosys.fit_mn_max(fmnm);
+   }
+   
+   //spatialFilter_ku
+   if(config.isSet("system.spatialFilter_ku") )
+   {
+      realT ku = aosys.spatialFilter_ku();
+      config( ku, "system.spatialFilter_ku");
+      aosys.spatialFilter_ku(ku);
+   }
+   
+   //spatialFilter_kv
+   if(config.isSet("system.spatialFilter_kv") )
+   {
+      realT kv = aosys.spatialFilter_kv();
+      config( kv, "system.spatialFilter_kv");
+      aosys.spatialFilter_kv(kv);
    }
    
    //ncp_wfe
