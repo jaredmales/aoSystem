@@ -1,3 +1,5 @@
 aoSystem.o
 aoSystem
 results/
+
+aoSystem_git_version.h
