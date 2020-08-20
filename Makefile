@@ -7,5 +7,7 @@ NEED_SOFA=yes
 NEED_LEVMAR=no
 NEED_XPA=no
 
+GIT_VERSION=yes
+
 include $(MXMAKEFILE)
 
