@@ -159,6 +159,8 @@ protected:
 template<typename realT>
 mxAOSystem_app<realT>::mxAOSystem_app()
 {
+   m_requireConfigPathLocal = false;
+   
    lam_0 = 0;
    
    m_dumpSetup = true;
@@ -1094,9 +1096,9 @@ int mxAOSystem_app<realT>::temporalPSD()
    mx::AO::analysis::fourierTemporalPSD<realT, aosysT> ftPSD;
    ftPSD.m_aosys = &aosys;
    
-   if(aosys.minTauWFS() <= 0)
+   if(aosys.tauWFS() <= 0)
    {
-      std::cerr << "temporalPSD: You must set minTauWFS to be > 0 to specify loop frequency.\n";
+      std::cerr << "temporalPSD: You must set tauWFS to be > 0 to specify loop frequency.\n";
       return -1;
    }
    
