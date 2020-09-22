@@ -14,7 +14,7 @@ git clone https://github.com/jaredmales/mxlib.git -b aoSystem --single-branch ./
 
 Run that command in the directory you want as the top-level directory of the mxlib source repository on your local machine.  Then follow the remaining installation instructions at: https://jaredmales.github.io/mxlib/group__installation.html
 
-Note: I have installed this on CentOS6 and 7, and Ubuntu 16.04 and 17.04.  Joesph Long has successfully compiled it on macOS Darwin (and contributed a bunch of changes to the makefiles so it works).
+Note: I have installed this on CentOS6 and 7, and Ubuntu 16.04 and 17.04.  Joseph Long has successfully compiled it on macOS Darwin (and contributed a bunch of changes to the makefiles so it works).
 
 
 
