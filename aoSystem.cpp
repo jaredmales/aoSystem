@@ -93,7 +93,7 @@ protected:
    
    int mnMap;
    
-   std::vector<realT> starMags;
+   std::vector<realT> m_starMags;
    
    realT m_dfreq {0.1};
    realT m_fmax {0};
@@ -599,7 +599,7 @@ void mxAOSystem_app<realT>::loadConfig()
    
    if( config.isSet("starMags") )
    {
-      config( starMags, "starMags");
+      config( m_starMags, "starMags");
    }
    
    /**********************************************************/
@@ -1048,7 +1048,7 @@ int mxAOSystem_app<realT>::ErrorBudget()
       units = aosys.lam_sci() / (2.0*pi<realT>()) / 1e-9;
    }
    
-   if(starMags.size() == 0)
+   if(m_starMags.size() == 0)
    {
       std::cout << "Measurement: " << sqrt(aosys.measurementError())*units << "\n";
       std::cout << "Time-delay:  " << sqrt(aosys.timeDelayError())*units << "\n";
@@ -1060,11 +1060,11 @@ int mxAOSystem_app<realT>::ErrorBudget()
    {
       std::cout << "#mag     d_opt        Measurement     Time-delay      Fitting    Chr-Scint-OPD      Chr-Index   Disp-Ansio-OPD  NCP-error         Strehl\n";
       
-      for(size_t i=0; i< starMags.size(); ++i)
+      for(size_t i=0; i< m_starMags.size(); ++i)
       {
                
-         aosys.starMag(starMags[i]);
-         std::cout << starMags[i] << "\t    ";
+         aosys.starMag(m_starMags[i]);
+         std::cout << m_starMags[i] << "\t    ";
          std::cout << aosys.d_opt() << "\t  ";
          std::cout << sqrt(aosys.measurementError())*units << "\t   ";
          std::cout << sqrt(aosys.timeDelayError())*units << "\t ";
@@ -1141,17 +1141,76 @@ int mxAOSystem_app<realT>::temporalPSD()
       tflp.regularizeCoefficients( gmaxLP, goptLP, varLP, go_lp, psdOL, psdN, lpNc);      
    }
    
+   realT tauSI = 0, tauLP = 0;
+   
+   if(m_lifetimeTrials > 0)
+   {
+      std::vector<realT> spfreq, sppsd;
+      std::vector<std::complex<realT>> ETFxn(freq.size()), NTFxn(freq.size());
+      mx::sigproc::psdVarMean<mx::sigproc::psdVarMeanParams<realT>> pvm;
+      mx::sigproc::psdVarMean<mx::sigproc::psdVarMeanParams<realT>> pvmLP;
+      realT splifeT = 100.0;
+      realT error;
+      realT spvar;
+      
+      if(goptSI > 0)
+      {
+         for(size_t i=0;i<freq.size();++i)
+         {
+            ETFxn[i] = go_si.clETF(i, goptSI);
+            NTFxn[i] = go_si.clNTF(i, goptSI);
+         }
+      }
+      else
+      {
+         for(size_t i=0;i<freq.size();++i)
+         {
+            ETFxn[i] = 1;
+            NTFxn[i] = 0;
+         }
+      }
+                  
+      mx::AO::analysis::speckleAmpPSD( spfreq, sppsd, freq, psdOL, ETFxn, psdN, NTFxn, m_lifetimeTrials);
+      spvar = mx::sigproc::psdVar(spfreq, sppsd);
+      tauSI = pvm(error, spfreq, sppsd, splifeT) * (splifeT)/spvar;
+      
+      if(goptLP > 0)
+      {
+         for(size_t i=0;i<freq.size();++i)
+         {
+            ETFxn[i] = go_lp.clETF(i, goptLP);
+            NTFxn[i] = go_lp.clNTF(i, goptLP);
+         }
+      }
+      else
+      {
+         for(size_t i=0;i<freq.size();++i)
+         {
+            ETFxn[i] = 1;
+            NTFxn[i] = 0;
+         }
+      }
+      
+      mx::AO::analysis::speckleAmpPSD( spfreq, sppsd, freq, psdOL, ETFxn, psdN, NTFxn, m_lifetimeTrials);
+      spvar = mx::sigproc::psdVar(spfreq, sppsd);
+      tauLP = pvmLP(error, spfreq, sppsd, splifeT) * (splifeT)/spvar;
+      
+   }
+   
    dumpSetup(std::cout);
    
    std::cout << "# aoSystem single temporal PSD\n";
    std::cout << "#    var OL = " << "\n";
    std::cout << "#    opt-gain SI = " << goptSI << "\n";
    std::cout << "#    var SI = " << varSI << "\n";
+   if(m_lifetimeTrials > 0) std::cout << "#    tau SI = " << tauSI << "\n";
    std::cout << "#    LP Num. coeff = " << lpNc << "\n";
    std::cout << "#    opt-gain LP = " << goptLP << "\n";
    std::cout << "#    var LP = " << varLP << "\n";
-   std::cout << "#################################################################\n";
-   std::cout << "# freq    PSD-OL    PSD-N    ETF-SI  NTF-SI   ETF-LP   NTF-LP \n";
+   if(m_lifetimeTrials > 0) std::cout << "#    tau LP = " << tauLP << "\n";
+   
+   std::cout << "####################################################################################\n";
+   std::cout << "# freq       PSD-OL       PSD-N       ETF2-SI     NTF2-SI      ETF2-LP      NTF2-LP \n";
    
    realT ETF_SI, NTF_SI, ETF_LP = -1, NTF_LP =-1;
    for(size_t i=0; i < freq.size(); ++i)
@@ -1237,13 +1296,13 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
 
    std::vector<realT> mags;
    
-   if(starMags.size() == 0)
+   if(m_starMags.size() == 0)
    {
       mags = { aosys.starMag() };
    }
    else
    {
-      mags = starMags;
+      mags = m_starMags;
    }
    
    return ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, m_lifetimeTrials, m_uncontrolledLifetimes, writePSDs); 
@@ -1257,6 +1316,13 @@ iosT & mxAOSystem_app<realT>::dumpSetup( iosT & ios)
 
    ios << "# AO System Setup:\n";
    ios << "#    mode = " << m_mode << '\n';
+   ios << "#    starMags = ";
+   if(m_starMags.size()>0)
+   {
+      for(size_t n=0;n<m_starMags.size()-1;++n) ios << m_starMags[n] << ", ";
+      ios << m_starMags.back() << '\n';
+   }
+   else ios << '\n';
    
    if(m_mode == "temporalPSD")
    {
