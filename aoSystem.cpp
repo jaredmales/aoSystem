@@ -31,14 +31,16 @@
 #include <Eigen/Dense>
 
 
-#include <mx/improc/fitsFile.hpp>
+#include <mx/ioutils/fits/fitsFile.hpp>
 #include <mx/math/func/airyPattern.hpp>
 
 #define MX_APP_DEFAULT_configPathGlobal_env "MXAOSYSTEM_GLOBAL_CONFIG"
 #define MX_APP_DEFAULT_configPathLocal "aoSystem.conf"
 
 #include <mx/app/application.hpp>
-#include <mx/fft/fftwEnvironment.hpp>
+#include <mx/math/fft/fftwEnvironment.hpp>
+#include <mx/math/constants.hpp>
+using namespace mx::math;
 
 #include <mx/ao/analysis/aoSystem.hpp>
 #include <mx/ao/analysis/aoPSDs.hpp>
@@ -770,7 +772,7 @@ int mxAOSystem_app<realT>::C_MapCon( const std::string & mapFile,
       std::cout << i << " " << im( mnMap+1, mnMap+1 + i) << "\n";
    }
    
-   mx::improc::fitsFile<realT> ff;
+   mx::fits::fitsFile<realT> ff;
    ff.write(mapFile, im);
 
    return 0;
@@ -784,7 +786,7 @@ int mxAOSystem_app<realT>::C0Raw()
    map.resize( mnMap*2+1, mnMap*2 + 1);
    aosys.C0Map(map);
    
-   mx::improc::fitsFile<realT> ff;
+   mx::fits::fitsFile<realT> ff;
    ff.write("C0Raw.fits", map);
    
    for(int i=0;i< aosys.fit_mn_max(); ++i)
@@ -817,7 +819,7 @@ int mxAOSystem_app<realT>::C1Raw()
    map.resize( mnMap*2+1, mnMap*2 + 1);
    aosys.C1Map(map);
    
-   mx::improc::fitsFile<realT> ff;
+   mx::fits::fitsFile<realT> ff;
    ff.write("C1Raw.fits", map);
    
    for(int i=0;i< aosys.fit_mn_max(); ++i)
@@ -850,7 +852,7 @@ int mxAOSystem_app<realT>::C2Raw()
    map.resize( mnMap*2+1, mnMap*2 + 1);
    aosys.C2Map(map);
    
-   mx::improc::fitsFile<realT> ff;
+   mx::fits::fitsFile<realT> ff;
    ff.write("C2Raw.fits", map);
    
    for(int i=0;i< aosys.fit_mn_max(); ++i)
@@ -883,7 +885,7 @@ int mxAOSystem_app<realT>::C4Raw()
    map.resize( mnMap*2+1, mnMap*2 + 1);
    aosys.C4Map(map);
    
-   mx::improc::fitsFile<realT> ff;
+   mx::fits::fitsFile<realT> ff;
    ff.write("C4Raw.fits", map);
    
    for(int i=0;i< aosys.fit_mn_max(); ++i)
@@ -916,7 +918,7 @@ int mxAOSystem_app<realT>::C6Raw()
    map.resize( mnMap*2+1, mnMap*2 + 1);
    aosys.C6Map(map);
    
-   mx::improc::fitsFile<realT> ff;
+   mx::fits::fitsFile<realT> ff;
    ff.write("C6Raw.fits", map);
    
    for(int i=0;i< aosys.fit_mn_max(); ++i)
@@ -952,7 +954,7 @@ int mxAOSystem_app<realT>::C7Raw()
    map.resize( mnMap*2+1, mnMap*2 + 1);
    aosys.C7Map(map);
    
-   mx::improc::fitsFile<realT> ff;
+   mx::fits::fitsFile<realT> ff;
    ff.write("C7Raw.fits", map);
    
    for(int i=0;i< aosys.fit_mn_max(); ++i)
@@ -1359,7 +1361,7 @@ iosT & mxAOSystem_app<realT>::dumpSetup( iosT & ios)
 
 int main(int argc, char ** argv)
 {
-   mx::fftwEnvironment<double,false> fftwEnv;
+   mx::math::fft::fftwEnvironment<double,false> fftwEnv;
  
    mxAOSystem_app<double> aosysA;
    
