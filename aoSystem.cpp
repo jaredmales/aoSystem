@@ -1141,7 +1141,7 @@ int mxAOSystem_app<realT>::temporalPSD()
       tflp.regularizeCoefficients( gmaxLP, goptLP, varLP, go_lp, psdOL, psdN, lpNc);      
    }
    
-   realT tauSI = 0, tauLP = 0;
+   realT tauOL = 0, tauSI = 0, tauLP = 0;
    
    if(m_lifetimeTrials > 0)
    {
@@ -1152,6 +1152,17 @@ int mxAOSystem_app<realT>::temporalPSD()
       realT splifeT = 100.0;
       realT error;
       realT spvar;
+      
+      //Measure OL
+      for(size_t i=0;i<freq.size();++i)
+      {
+         ETFxn[i] = 1.0;
+         NTFxn[i] = 0.0;
+      }
+      mx::AO::analysis::speckleAmpPSD( spfreq, sppsd, freq, psdOL, ETFxn, psdN, NTFxn, m_lifetimeTrials);
+      spvar = mx::sigproc::psdVar(spfreq, sppsd);
+      tauOL = pvm(error, spfreq, sppsd, splifeT) * (splifeT)/spvar;
+
       
       if(goptSI > 0)
       {
@@ -1201,6 +1212,7 @@ int mxAOSystem_app<realT>::temporalPSD()
    
    std::cout << "# aoSystem single temporal PSD\n";
    std::cout << "#    var OL = " << "\n";
+   if(m_lifetimeTrials > 0) std::cout << "#    tau OL = " << tauOL << "\n";
    std::cout << "#    opt-gain SI = " << goptSI << "\n";
    std::cout << "#    var SI = " << varSI << "\n";
    if(m_lifetimeTrials > 0) std::cout << "#    tau SI = " << tauSI << "\n";
