@@ -1356,12 +1356,10 @@ iosT & mxAOSystem_app<realT>::dumpSetup( iosT & ios)
 
 int main(int argc, char ** argv)
 {
-   std::cerr << 0 << '\n';
    mx::math::fft::fftwEnvironment<double,false> fftwEnv;
  
- std::cerr << 1 << '\n';
    mxAOSystem_app<double> aosysA;
-   std::cerr << 2 << '\n';
+
    return aosysA.main(argc, argv);
    
 }
