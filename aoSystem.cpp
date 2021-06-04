@@ -31,14 +31,12 @@
 #include <Eigen/Dense>
 
 
-#include <mx/improc/fitsFile.hpp>
+#include <mx/ioutils/fits/fitsFile.hpp>
+#include <mx/math/constants.hpp>
 #include <mx/math/func/airyPattern.hpp>
 
-#define MX_APP_DEFAULT_configPathGlobal_env "MXAOSYSTEM_GLOBAL_CONFIG"
-#define MX_APP_DEFAULT_configPathLocal "aoSystem.conf"
-
 #include <mx/app/application.hpp>
-#include <mx/fft/fftwEnvironment.hpp>
+#include <mx/math/fft/fftwEnvironment.hpp>
 
 #include <mx/ao/analysis/aoSystem.hpp>
 #include <mx/ao/analysis/aoPSDs.hpp>
@@ -104,8 +102,9 @@ protected:
    int lpNc;                 ///< Number of linear predictor coefficients.  If <= 1 then not used.
    bool m_uncontrolledLifetimes {false}; ///< Whether or not lifetimes are calcualated for uncontrolled modes.
    int m_lifetimeTrials {0}; ///< Number of trials to use for calculating speckle lifetimes.  If 0, lifetimes are not calcualted.
-   bool writePSDs {false};   ///< Flag controlling whether output temporal PSDs are written to disk or not.
-   
+   bool m_writePSDs {false};   ///< Flag controlling whether output temporal PSDs are written to disk or not.
+   bool m_writeXfer {false};   ///< Flag controlling whether output transfer functions are written to disk or not.
+
    virtual void setupConfig();
 
    virtual void loadConfig();
@@ -159,6 +158,9 @@ protected:
 template<typename realT>
 mxAOSystem_app<realT>::mxAOSystem_app()
 {
+   m_configPathGlobal_env = "MXAOSYSTEM_GLOBAL_CONFIG";
+   m_configPathLocal = "aoSystem.conf";
+   
    m_requireConfigPathLocal = false;
    
    lam_0 = 0;
@@ -256,7 +258,7 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("uncontrolledLifetimes", "", "uncontrolledLifetimes", argType::Required, "temporal", "uncontrolledLifetimes", false, "bool", "If true, lifetimes are calculated for uncontrolled modes.  Default is false.");
    config.add("lifetimeTrials", "", "lifetimeTrials", argType::Required, "temporal", "lifetimeTrials", false, "int", "Number of trials to use for calculating speckle lifetimes.  If 0, lifetimes are not calcualted.");
    config.add("writePSDs", "", "writePSDs", argType::True, "temporal", "writePSDs", false, "bool", "Flag.  If set then output PSDs are written to disk.");
-   
+   config.add("writeXfer", "", "writeXfer", argType::True, "temporal", "writeXfer", false, "bool", "Flag.  If set then output transfer functions are written to disk.");
 }
 
 template<typename realT>
@@ -483,28 +485,26 @@ void mxAOSystem_app<realT>::loadConfig()
       
       aosys.lam_wfs(lam_wfs);
    }
-   
-   //npix_wfs
-   if(config.isSet("npix_wfs") )
-   {
-      realT npix_wfs = aosys.npix_wfs();
-      config(npix_wfs, "npix_wfs");
-      aosys.npix_wfs(npix_wfs);
-   }
+
+   //npix_wfs   
+   std::vector<realT> npix_wfs;
+   config(npix_wfs, "npix_wfs");   
+   aosys.npix_wfs(npix_wfs);
       
    //ron_wfs
-   if(config.isSet("ron_wfs") )
-   {
-      realT rwfs = aosys.ron_wfs();
-      config( rwfs, "ron_wfs");
-      aosys.ron_wfs(rwfs);
-   }
-      
+   std::vector<realT> rwfs = aosys.ron_wfs();
+   config( rwfs, "ron_wfs");
+   aosys.ron_wfs(rwfs);
+
    //Fbg
-   realT Fbg = aosys.Fbg();
+   std::vector<realT> Fbg = aosys.Fbg();
    config( Fbg, "Fbg");
    aosys.Fbg(Fbg);
-   
+
+   //minTauWFS
+   std::vector<realT> mtwfs;
+   config( mtwfs, "minTauWFS");
+   aosys.minTauWFS(mtwfs);
    
    if(config.isSet("bin_npix"))
    {
@@ -513,10 +513,6 @@ void mxAOSystem_app<realT>::loadConfig()
       aosys.bin_npix(bin_npix);
    }
    
-   //minTauWFS
-   realT mtwfs = aosys.minTauWFS();
-   config( mtwfs, "minTauWFS");
-   aosys.minTauWFS(mtwfs);
     
    //tauWFS
    realT twfs = aosys.tauWFS();
@@ -616,7 +612,8 @@ void mxAOSystem_app<realT>::loadConfig()
 
    config(m_uncontrolledLifetimes, "uncontrolledLifetimes");
    config(m_lifetimeTrials, "lifetimeTrials");   
-   config(writePSDs, "writePSDs");
+   config(m_writePSDs, "writePSDs");
+   config(m_writeXfer, "writeXfer");
 
    
    if(config.m_unusedConfigs.size() > 0)
@@ -770,7 +767,7 @@ int mxAOSystem_app<realT>::C_MapCon( const std::string & mapFile,
       std::cout << i << " " << im( mnMap+1, mnMap+1 + i) << "\n";
    }
    
-   mx::improc::fitsFile<realT> ff;
+   mx::fits::fitsFile<realT> ff;
    ff.write(mapFile, im);
 
    return 0;
@@ -784,7 +781,7 @@ int mxAOSystem_app<realT>::C0Raw()
    map.resize( mnMap*2+1, mnMap*2 + 1);
    aosys.C0Map(map);
    
-   mx::improc::fitsFile<realT> ff;
+   mx::fits::fitsFile<realT> ff;
    ff.write("C0Raw.fits", map);
    
    for(int i=0;i< aosys.fit_mn_max(); ++i)
@@ -817,7 +814,7 @@ int mxAOSystem_app<realT>::C1Raw()
    map.resize( mnMap*2+1, mnMap*2 + 1);
    aosys.C1Map(map);
    
-   mx::improc::fitsFile<realT> ff;
+   mx::fits::fitsFile<realT> ff;
    ff.write("C1Raw.fits", map);
    
    for(int i=0;i< aosys.fit_mn_max(); ++i)
@@ -850,7 +847,7 @@ int mxAOSystem_app<realT>::C2Raw()
    map.resize( mnMap*2+1, mnMap*2 + 1);
    aosys.C2Map(map);
    
-   mx::improc::fitsFile<realT> ff;
+   mx::fits::fitsFile<realT> ff;
    ff.write("C2Raw.fits", map);
    
    for(int i=0;i< aosys.fit_mn_max(); ++i)
@@ -883,7 +880,7 @@ int mxAOSystem_app<realT>::C4Raw()
    map.resize( mnMap*2+1, mnMap*2 + 1);
    aosys.C4Map(map);
    
-   mx::improc::fitsFile<realT> ff;
+   mx::fits::fitsFile<realT> ff;
    ff.write("C4Raw.fits", map);
    
    for(int i=0;i< aosys.fit_mn_max(); ++i)
@@ -916,7 +913,7 @@ int mxAOSystem_app<realT>::C6Raw()
    map.resize( mnMap*2+1, mnMap*2 + 1);
    aosys.C6Map(map);
    
-   mx::improc::fitsFile<realT> ff;
+   mx::fits::fitsFile<realT> ff;
    ff.write("C6Raw.fits", map);
    
    for(int i=0;i< aosys.fit_mn_max(); ++i)
@@ -952,7 +949,7 @@ int mxAOSystem_app<realT>::C7Raw()
    map.resize( mnMap*2+1, mnMap*2 + 1);
    aosys.C7Map(map);
    
-   mx::improc::fitsFile<realT> ff;
+   mx::fits::fitsFile<realT> ff;
    ff.write("C7Raw.fits", map);
    
    for(int i=0;i< aosys.fit_mn_max(); ++i)
@@ -1045,7 +1042,7 @@ int mxAOSystem_app<realT>::ErrorBudget()
    if(wfeUnits == "nm")
    {
       std::cerr << aosys.lam_sci() << "\n";
-      units = aosys.lam_sci() / (2.0*pi<realT>()) / 1e-9;
+      units = aosys.lam_sci() / (mx::math::two_pi<realT>()) / 1e-9;
    }
    
    if(m_starMags.size() == 0)
@@ -1117,7 +1114,7 @@ int mxAOSystem_app<realT>::temporalPSD()
    
    //Create WFS Noise PSD
    psdN.resize(freq.size());
-   mx::AO::analysis::wfsNoisePSD<realT>( psdN, aosys.beta_p(k_m,k_n), aosys.Fg(), (1.0/fs), aosys.npix_wfs(), aosys.Fbg(), aosys.ron_wfs());
+   mx::AO::analysis::wfsNoisePSD<realT>( psdN, aosys.beta_p(k_m,k_n), aosys.Fg(), (1.0/fs), aosys.npix_wfs((size_t) 0), aosys.Fbg((size_t) 0), aosys.ron_wfs((size_t) 0));
    
    //optimize
    mx::AO::analysis::clAOLinearPredictor<realT> tflp;
@@ -1317,7 +1314,7 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
       mags = m_starMags;
    }
    
-   return ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, m_lifetimeTrials, m_uncontrolledLifetimes, writePSDs); 
+   return ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, m_lifetimeTrials, m_uncontrolledLifetimes, m_writePSDs, m_writeXfer); 
    
 }
 
@@ -1359,10 +1356,12 @@ iosT & mxAOSystem_app<realT>::dumpSetup( iosT & ios)
 
 int main(int argc, char ** argv)
 {
-   mx::fftwEnvironment<double,false> fftwEnv;
+   std::cerr << 0 << '\n';
+   mx::math::fft::fftwEnvironment<double,false> fftwEnv;
  
+ std::cerr << 1 << '\n';
    mxAOSystem_app<double> aosysA;
-   
+   std::cerr << 2 << '\n';
    return aosysA.main(argc, argv);
    
 }
