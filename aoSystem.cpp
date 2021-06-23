@@ -6,7 +6,7 @@
   */
 
 //***********************************************************************//
-// Copyright 2018 Jared R. Males (jaredmales@gmail.com)
+// Copyright 2018-2021 Jared R. Males (jaredmales@gmail.com)
 //
 // This file is part of aoSystem.
 //
@@ -64,7 +64,7 @@ public:
 
    typedef Eigen::Array<realT, -1,-1> imageT; ///< The image type
    
-   typedef mx::AO::analysis::aoSystem<realT, mx::AO::analysis::vonKarmanSpectrum<realT>> aosysT; ///< The AO system type.
+   typedef mx::AO::analysis::aoSystem<realT, mx::AO::analysis::vonKarmanSpectrum<realT>> m_aosysT; ///< The AO system type.
 
    /// Default constructor
    mxAOSystem_app(); 
@@ -74,7 +74,7 @@ public:
    
 protected:
    
-   aosysT aosys; ///< The ao system.
+   m_aosysT m_aosys; ///< The ao system.
    
    mx::AO::analysis::wfs<realT> idealWFS; ///< An ideal WFS
    mx::AO::analysis::pywfsUnmod<realT> unmodPyWFS; ///< An unmodulated Pyramid WFS 
@@ -82,14 +82,12 @@ protected:
    
    realT lam_0;
    
-   bool m_dumpSetup;
-   std::string setupOutName;
+   bool m_dumpSetup {true};
+   std::string m_setupOutName {"aoSystem_setup.txt"};
    
-   std::string m_mode {"C2Raw"};
+   std::string m_mode {"C2Var"};
    
    std::string wfeUnits;
-   
-   int mnMap;
    
    std::vector<realT> m_starMags;
    
@@ -115,31 +113,36 @@ protected:
                  imageT & map 
                );
               
-   int C0Raw();
-   int C0Map();
+   int C0Var();
+   int C0Con();
    
-   int C1Raw();
-   int C1Map();
+   int C1Var();
+   int C1Con();
    
-   int C2Raw();
-   int C2Map();
+   int C2Var();
+   int C2Con();
    
-   int C4Raw();
-   int C4Map();
+   int C3Var();
+   int C3Con();
+
+   int C4Var();
+   int C4Con();
    
-   int C6Raw();
-   int C6Map();
+   int C5Var();
+   int C5Con();
+
+   int C6Var();
+   int C6Con();
    
-   int C7Raw();
-   int C7Map();
+   int C7Var();
+   int C7Con();
    
-   int CAllRaw();
+   int CVarAll();
    
-   int CProfAll();
+   int CConAll();
    
    int ErrorBudget();
    
-   int Strehl();
    
    int temporalPSD();
    
@@ -164,17 +167,12 @@ mxAOSystem_app<realT>::mxAOSystem_app()
    m_requireConfigPathLocal = false;
    
    lam_0 = 0;
-   
-   m_dumpSetup = true;
-   setupOutName = "mxAOAnalysisSetup.txt";
-   
-   aosys.wfsBeta( idealWFS );
+    
+   m_aosys.wfsBeta( idealWFS );
    
    wfeUnits = "rad";
    
-   aosys.loadMagAOX(); 
-   
-   mnMap = 50;
+   m_aosys.loadMagAOX(); 
    
    k_m = 1;
    k_n = 0;
@@ -190,32 +188,29 @@ template<typename realT>
 void mxAOSystem_app<realT>::setupConfig()
 {
    //App config
-   config.add("mode"        ,"m", "mode" , argType::Required, "", "mode",     false,  "string", "Mode of calculation: C<N>Raw, C<N>Map, CAllRaw, CProfAll, ErrorBudget, Strehl, temporalPSD, temporalPSDGrid, temporalPSDGridAnalyze");
-   config.add("setupOutFile"        ,"", "setupOutFile" , argType::Required, "", "setupOutFile", false, "string", "Filename for output of setup data");
-
-   config.add("wfeUnits"        ,"", "wfeUnits" , argType::Required, "", "wfeUnits", false, "string", "Units for WFE in ErrorBudget: rad or nm");
-
-   config.add("mnMap"        ,"", "mnMap" , argType::Required, "", "mnMap",     false,  "string", "Maximum spatial frequency index to include in maps.");
+   config.add("mode"          ,"m", "mode",        argType::Required, "", "mode",         false, "string", "Mode of calculation: ErrorBudget, C<N>Var, C<N>Con, CVarAll, CConAll,  temporalPSD, temporalPSDGrid, temporalPSDGridAnalyze");
+   config.add("setupOutFile"  ,"", "setupOutFile", argType::Required, "", "setupOutFile", false, "string", "Filename for output of setup data");
+   config.add("wfeUnits"      ,"", "wfeUnits",     argType::Required, "", "wfeUnits",     false, "string", "Units for WFE in ErrorBudget: rad or nm");
    
    //Load a model
    config.add("model"        ,"", "model" , argType::Required, "", "model", false, "string", "Model to load: Guyon2005, MagAOX, or GMagAOX");
    
    //Atmosphere configuration
-   config.add("lam_0"        ,"", "lam_0" , argType::Required, "atmosphere", "lam_0",        false, "real", "The reference wavlength for r_0 [m]");
-   config.add("r_0"          ,"", "r_0"   , argType::Required, "atmosphere", "r_0",          false, "real", "Fried's parameter [m]");
-   config.add("L_0"          ,"", "L_0"   , argType::Required, "atmosphere", "L_0",          false, "real", "Outer scale [m]");
+   config.add("lam_0"        ,"", "lam_0" , argType::Required, "atmosphere", "lam_0",        false, "real",        "The reference wavlength for r_0 [m]");
+   config.add("r_0"          ,"", "r_0"   , argType::Required, "atmosphere", "r_0",          false, "real",        "Fried's parameter [m]");
+   config.add("L_0"          ,"", "L_0"   , argType::Required, "atmosphere", "L_0",          false, "real",        "Outer scale [m]");
    config.add("layer_Cn2"    ,"", ""      , argType::None,     "atmosphere", "layer_Cn2",    false, "real vector", "Layer Cn^2");  
    config.add("layer_v_wind" ,"", ""      , argType::None,     "atmosphere", "layer_v_wind", false, "real vector", "Layer wind speeds [m/s]");
    config.add("layer_dir"    ,"", ""      , argType::None,     "atmosphere", "layer_dir",    false, "real vector", "Layer wind directions [rad]");
    config.add("layer_z"      ,"", ""      , argType::None,     "atmosphere", "layer_z",      false, "real vector", "layer heights [m]");
-   config.add("h_obs"        ,"", ""      , argType::None,     "atmosphere", "h_obs",        false, "real", "height of observatory [m]");
-   config.add("H"            ,"", ""      , argType::None,     "atmosphere", "H",            false, "real", "atmospheric scale heights [m]");
-   config.add("v_wind"       ,"", "v_wind", argType::Required, "atmosphere", "v_wind",       false, "real", "Mean windspeed (5/3 momement), rescales layers [m/s]");
-   config.add("z_mean"       ,"", "z_mean", argType::Required, "atmosphere", "z_mean",       false, "real", "Mean layer height (5/3 momemnt), rescales layers [m/s]");
+   config.add("h_obs"        ,"", ""      , argType::None,     "atmosphere", "h_obs",        false, "real",        "height of observatory [m]");
+   config.add("H"            ,"", ""      , argType::None,     "atmosphere", "H",            false, "real",        "atmospheric scale heights [m]");
+   config.add("v_wind"       ,"", "v_wind", argType::Required, "atmosphere", "v_wind",       false, "real",        "Mean windspeed (5/3 momement), rescales layers [m/s]");
+   config.add("z_mean"       ,"", "z_mean", argType::Required, "atmosphere", "z_mean",       false, "real",        "Mean layer height (5/3 momemnt), rescales layers [m/s]");
    
    //PSD Configuration
-   config.add("subTipTilt"    ,"", "subTipTilt",    argType::Required, "PSD", "subTipTilt",    false, "bool", "If set to true, the Tip/Tilt component is subtracted from the PSD.");
-   config.add("scintillation" ,"", "scintillation", argType::Required, "PSD", "scintillation", false, "bool", "If set to true, then scintillation is included in the PSD.");
+   config.add("subTipTilt"    ,"", "subTipTilt",    argType::Required, "PSD", "subTipTilt",    false, "bool",   "If set to true, the Tip/Tilt component is subtracted from the PSD.");
+   config.add("scintillation" ,"", "scintillation", argType::Required, "PSD", "scintillation", false, "bool",   "If set to true, then scintillation is included in the PSD.");
    config.add("component"     ,"", "component",     argType::Required, "PSD", "component",     false, "string", "Can be phase [default], amplitude, or dispersion.");
    
    //AO System configuration
@@ -238,8 +233,8 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("zeta"          ,"", "zeta"          , argType::Required, "system", "zeta",           false, "real", "Zenith distance [rad]");
    config.add("fit_mn_max"    ,"", "fit_mn_max"    , argType::Required, "system", "fit_mn_max",     false, "real", "Maximum spatial frequency index to use for analysis");
    
-   config.add("system.spatialFilter_ku", "", "system.spatialFilter_ku", argType::Required, "system", "spatialFilter_ku",     false, "real", "Spatial filter cutoff frequency in u [m^-1]");
-   config.add("system.spatialFilter_kv", "", "system.spatialFilter_kv", argType::Required, "system", "spatialFilter_kv",     false, "real", "Spatial filter cutoff frequency in v [m^-1]");
+   config.add("spatialFilter_ku", "", "spatialFilter_ku", argType::Required, "system", "spatialFilter_ku",     false, "real", "Spatial filter cutoff frequency in u [m^-1]");
+   config.add("spatialFilter_kv", "", "spatialFilter_kv", argType::Required, "system", "spatialFilter_kv",     false, "real", "Spatial filter cutoff frequency in v [m^-1]");
    
    config.add("ncp_wfe"       ,"", "ncp_wfe"       , argType::Required, "system", "ncp_wfe",        false, "real", "NCP WFE between 1 lambda/D and fit_mn_max [rad^2]");
    config.add("ncp_alpha"     ,"", "ncp_alpha"     , argType::Required, "system", "ncp_alpha",      false, "real", "PSD index for NCP WFE");
@@ -275,28 +270,28 @@ void mxAOSystem_app<realT>::loadConfig()
    config(m_mode, "mode");
    
    config(wfeUnits, "wfeUnits");
-   
-   config(mnMap, "mnMap");
-   
+
    /**********************************************************/
    /* Models                                                 */
    /**********************************************************/
    //These are called before anything else, so all parameters are modifications.
+   ///\todo this should actually get processed as a config file, so these settings override previous configs for proper cascading.  As it is now, if D is set in any config file, it will get overwritten, for instance.
    std::string model;
    config(model, "model");
    
    if(model != "")
    {
-      if( model == "Guyon2005" ) aosys.loadGuyon2005(); 
-      else if( model == "MagAOX" ) aosys.loadMagAOX();
-      else if( model == "GMagAOX" ) aosys.loadGMagAOX();
+      if( model == "Guyon2005" ) m_aosys.loadGuyon2005(); 
+      else if( model == "MagAOX" ) m_aosys.loadMagAOX();
+      else if( model == "GMagAOX" ) m_aosys.loadGMagAOX();
       else
       {
          std::cerr << "Unknown model: " << model << "\n";
+         doHelp = true;
          return;
       }
    }
-   
+
    /**********************************************************/
    /* Atmosphere                                             */
    /**********************************************************/
@@ -308,9 +303,9 @@ void mxAOSystem_app<realT>::loadConfig()
    //layer Cn2
    if( config.isSet("layer_Cn2") )
    {
-      std::vector<realT> lcn2 = aosys.atm.layer_Cn2();
+      std::vector<realT> lcn2 = m_aosys.atm.layer_Cn2();
       config(lcn2, "layer_Cn2");
-      aosys.atm.layer_Cn2(lcn2, lam_0);
+      m_aosys.atm.layer_Cn2(lcn2, lam_0);
    }
    
    //r_0
@@ -318,7 +313,7 @@ void mxAOSystem_app<realT>::loadConfig()
    {
       realT r_0;
       config(r_0, "r_0");
-      aosys.atm.r_0(r_0, lam_0);
+      m_aosys.atm.r_0(r_0, lam_0);
    }
    
    //Outer scale
@@ -326,49 +321,49 @@ void mxAOSystem_app<realT>::loadConfig()
    {
       realT L_0;
       config(L_0, "L_0");
-      aosys.atm.L_0(L_0);
+      m_aosys.atm.L_0(L_0);
    }
    
    //layer winds
    if( config.isSet("layer_v_wind") )
    {
-      std::vector<realT> lvw = aosys.atm.layer_v_wind();
+      std::vector<realT> lvw = m_aosys.atm.layer_v_wind();
       config(lvw, "layer_v_wind");
       
-      aosys.atm.layer_v_wind(lvw);
+      m_aosys.atm.layer_v_wind(lvw);
    }
    
    //layer direction
    if( config.isSet("layer_dir") )
    {
-      std::vector<realT> ld = aosys.atm.layer_dir();
+      std::vector<realT> ld = m_aosys.atm.layer_dir();
       config(ld, "layer_dir");
-      aosys.atm.layer_dir(ld);
+      m_aosys.atm.layer_dir(ld);
    }
  
    if( config.isSet("layer_z") )
    {
-      std::vector<realT> lz = aosys.atm.layer_z();
+      std::vector<realT> lz = m_aosys.atm.layer_z();
       config(lz, "layer_z");
       
-      aosys.atm.layer_z(lz);
+      m_aosys.atm.layer_z(lz);
    }
    
 
    //v_wind --> this rescales layer_v_wind
    if(config.isSet("v_wind") )
    {
-      realT  vw = aosys.atm.v_wind();
+      realT  vw = m_aosys.atm.v_wind();
       config(vw, "v_wind");
-      aosys.atm.v_wind(vw);
+      m_aosys.atm.v_wind(vw);
    }
 
    //z_mean --> this rescales layer_z
    if(config.isSet("z_mean") )
    {
-      realT zm = aosys.atm.z_mean();
+      realT zm = m_aosys.atm.z_mean();
       config(zm, "z_mean");
-      aosys.atm.z_mean(zm);
+      m_aosys.atm.z_mean(zm);
    }
 
    /**********************************************************/
@@ -378,15 +373,15 @@ void mxAOSystem_app<realT>::loadConfig()
    {
       bool subtt;
       config.get(subtt, "subTipTilt");
-      aosys.psd.subTipTilt(subtt);
+      m_aosys.psd.subTipTilt(subtt);
    }
    
    if(config.isSet("scintillation"))
    {
-      bool scint = aosys.psd.scintillation();
+      bool scint = m_aosys.psd.scintillation();
       config(scint, "scintillation");
       
-      aosys.psd.scintillation(scint);
+      m_aosys.psd.scintillation(scint);
    }
    
    if(config.isSet("component"))
@@ -395,10 +390,10 @@ void mxAOSystem_app<realT>::loadConfig()
       
       config(comp, "component");
       
-      if(comp == "phase") aosys.psd.component(mx::AO::analysis::PSDComponent::phase);
-      else if(comp == "amplitude") aosys.psd.component(mx::AO::analysis::PSDComponent::amplitude);
-      else if(comp == "dispPhase") aosys.psd.component(mx::AO::analysis::PSDComponent::dispPhase);
-      else if(comp == "dispAmplitude") aosys.psd.component(mx::AO::analysis::PSDComponent::dispAmplitude);
+      if(comp == "phase") m_aosys.psd.component(mx::AO::analysis::PSDComponent::phase);
+      else if(comp == "amplitude") m_aosys.psd.component(mx::AO::analysis::PSDComponent::amplitude);
+      else if(comp == "dispPhase") m_aosys.psd.component(mx::AO::analysis::PSDComponent::dispPhase);
+      else if(comp == "dispAmplitude") m_aosys.psd.component(mx::AO::analysis::PSDComponent::dispAmplitude);
       else
       {
          
@@ -417,180 +412,181 @@ void mxAOSystem_app<realT>::loadConfig()
       
       if(wfs == "ideal")
       {
-         aosys.wfsBeta(idealWFS);// = &idealWFS;
+         m_aosys.wfsBeta(idealWFS);// = &idealWFS;
       }
       else if(wfs == "unmodPyWFS")
       {
-         aosys.wfsBeta(unmodPyWFS);// = &unmodPyWFS;
+         m_aosys.wfsBeta(unmodPyWFS);// = &unmodPyWFS;
       }
       else if(wfs == "asympModPyWFS")
       {
-         aosys.wfsBeta(asympModPyWFS); // = &asympModPyWFS;
+         m_aosys.wfsBeta(asympModPyWFS); // = &asympModPyWFS;
       }
       else
       {
          std::cerr << "Unkown WFS type\n";
-         exit(-1);
+         doHelp = true;
+         
       }
    }
    
    //diameter
    if(config.isSet("D") )
    {
-      realT D = aosys.D();
+      realT D = m_aosys.D();
       config(D, "D");
-      aosys.D(D);
+      m_aosys.D(D);
    }
-   
+
    //d_min
    if(config.isSet("d_min") )
    {
-      realT d_min = aosys.d_min();
+      realT d_min = m_aosys.d_min();
       config(d_min, "d_min");
-      aosys.d_min(d_min);
+      m_aosys.d_min(d_min);
    }
       
    if(config.isSet("optd"))
    {
       bool optd = true;
       config(optd, "optd");
-      aosys.optd(optd);
+      m_aosys.optd(optd);
    }
    
-   realT optd_delta = aosys.optd_delta();
+   realT optd_delta = m_aosys.optd_delta();
    config(optd_delta, "optd_delta");
-   aosys.optd_delta(optd_delta);
+   m_aosys.optd_delta(optd_delta);
    
    if(config.isSet("circularLimit"))
    {
       bool cl = true;
       config(cl, "circularLimit");
-      aosys.circularLimit(cl);
+      m_aosys.circularLimit(cl);
    }
    
    //F0
    if(config.isSet("F0") )
    {
-      realT F0 = aosys.F0();
+      realT F0 = m_aosys.F0();
       config(F0, "F0");
-      aosys.F0(F0);
+      m_aosys.F0(F0);
    }
    
    
    //lam_wfs
    if(config.isSet("lam_wfs") )
    {
-      realT lam_wfs = aosys.lam_wfs();
+      realT lam_wfs = m_aosys.lam_wfs();
       config(lam_wfs, "lam_wfs");
       
-      aosys.lam_wfs(lam_wfs);
+      m_aosys.lam_wfs(lam_wfs);
    }
 
    //npix_wfs   
    std::vector<realT> npix_wfs;
    config(npix_wfs, "npix_wfs");   
-   aosys.npix_wfs(npix_wfs);
+   m_aosys.npix_wfs(npix_wfs);
       
    //ron_wfs
-   std::vector<realT> rwfs = aosys.ron_wfs();
+   std::vector<realT> rwfs = m_aosys.ron_wfs();
    config( rwfs, "ron_wfs");
-   aosys.ron_wfs(rwfs);
+   m_aosys.ron_wfs(rwfs);
 
    //Fbg
-   std::vector<realT> Fbg = aosys.Fbg();
+   std::vector<realT> Fbg = m_aosys.Fbg();
    config( Fbg, "Fbg");
-   aosys.Fbg(Fbg);
+   m_aosys.Fbg(Fbg);
 
    //minTauWFS
    std::vector<realT> mtwfs;
    config( mtwfs, "minTauWFS");
-   aosys.minTauWFS(mtwfs);
+   m_aosys.minTauWFS(mtwfs);
    
    if(config.isSet("bin_npix"))
    {
       bool bin_npix = true;
       config(bin_npix, "bin_npix");
-      aosys.bin_npix(bin_npix);
+      m_aosys.bin_npix(bin_npix);
    }
    
     
    //tauWFS
-   realT twfs = aosys.tauWFS();
+   realT twfs = m_aosys.tauWFS();
    config( twfs, "tauWFS");
-   aosys.tauWFS(twfs);
+   m_aosys.tauWFS(twfs);
    
    
    //deltaTau
-   realT dt = aosys.deltaTau();
+   realT dt = m_aosys.deltaTau();
    config( dt, "deltaTau");
-   aosys.deltaTau(dt);
+   m_aosys.deltaTau(dt);
       
-   bool optTau = aosys.optTau();
+   bool optTau = m_aosys.optTau();
    config(optTau, "optTau");
-   aosys.optTau(optTau);
+   m_aosys.optTau(optTau);
    
    //lam_sci
    if(config.isSet("lam_sci") )
    {
-      realT lsci = aosys.lam_sci();
+      realT lsci = m_aosys.lam_sci();
       config( lsci, "lam_sci");
-      aosys.lam_sci( lsci );
+      m_aosys.lam_sci( lsci );
    }
    
    //zeta
    if(config.isSet("zeta") )
    {
-      realT zeta = aosys.zeta();
+      realT zeta = m_aosys.zeta();
       config(zeta , "zeta");
-      aosys.zeta(zeta);
+      m_aosys.zeta(zeta);
    }
    
    //fit_mn_max
    if(config.isSet("fit_mn_max") )
    {
-      realT fmnm = aosys.fit_mn_max();
+      realT fmnm = m_aosys.fit_mn_max();
       config( fmnm, "fit_mn_max");
-      aosys.fit_mn_max(fmnm);
+      m_aosys.fit_mn_max(fmnm);
    }
    
    //spatialFilter_ku
-   if(config.isSet("system.spatialFilter_ku") )
+   if(config.isSet("spatialFilter_ku") )
    {
-      realT ku = aosys.spatialFilter_ku();
-      config( ku, "system.spatialFilter_ku");
-      aosys.spatialFilter_ku(ku);
+      realT ku = m_aosys.spatialFilter_ku();
+      config( ku, "spatialFilter_ku");
+      m_aosys.spatialFilter_ku(ku);
    }
    
    //spatialFilter_kv
-   if(config.isSet("system.spatialFilter_kv") )
+   if(config.isSet("spatialFilter_kv") )
    {
-      realT kv = aosys.spatialFilter_kv();
-      config( kv, "system.spatialFilter_kv");
-      aosys.spatialFilter_kv(kv);
+      realT kv = m_aosys.spatialFilter_kv();
+      config( kv, "spatialFilter_kv");
+      m_aosys.spatialFilter_kv(kv);
    }
    
    //ncp_wfe
    if(config.isSet("ncp_wfe") )
    {
-      realT nwfe = aosys.ncp_wfe();
+      realT nwfe = m_aosys.ncp_wfe();
       config( nwfe, "ncp_wfe");
-      aosys.ncp_wfe(nwfe);
+      m_aosys.ncp_wfe(nwfe);
    }
     
    //ncp_alpha
    if(config.isSet("ncp_alpha") )
    {
-      realT na = aosys.ncp_alpha();
+      realT na = m_aosys.ncp_alpha();
       config( na, "ncp_alpha");
-      aosys.ncp_alpha( na );
+      m_aosys.ncp_alpha( na );
    }
       
    //star_mag
    if(config.isSet("starMag") )
    {
-      realT smag = aosys.starMag();
+      realT smag = m_aosys.starMag();
       config( smag, "starMag");
-      aosys.starMag( smag );
+      m_aosys.starMag( smag );
    }
    
    if( config.isSet("starMags") )
@@ -647,69 +643,81 @@ int mxAOSystem_app<realT>::execute()
 {
    int rv;
    
-   if(m_mode == "C0Raw")
-   {
-      rv = C0Raw();
-   }
-   else if (m_mode == "C0Map")
-   {
-      rv = C0Map();
-   }
-   else if(m_mode == "C1Raw")
-   {
-      rv = C1Raw();
-   }
-   else if (m_mode == "C1Map")
-   {
-      rv = C1Map();
-   }
-   else if(m_mode == "C2Raw")
-   {
-      rv = C2Raw();
-   }
-   else if (m_mode == "C2Map")
-   {
-      rv = C2Map();
-   }
-   else if(m_mode == "C4Raw")
-   {
-      rv = C4Raw();
-   }
-   else if (m_mode == "C4Map")
-   {
-      rv = C4Map();
-   }
-   else if(m_mode == "C6Raw")
-   {
-      rv = C6Raw();
-   }
-   else if (m_mode == "C6Map")
-   {
-      rv = C6Map();
-   }
-   else if(m_mode == "C7Raw")
-   {
-      rv = C7Raw();
-   }
-   else if (m_mode == "C7Map")
-   {
-      rv = C7Map();
-   }
-   else if (m_mode == "CAllRaw")
-   {
-      rv = CAllRaw();
-   }
-   else if (m_mode == "CProfAll")
-   {
-      rv = CProfAll();
-   }
-   else if (m_mode == "ErrorBudget")
+   if (m_mode == "ErrorBudget")
    {
       rv = ErrorBudget();
    }
-   else if (m_mode == "Strehl")
+   else if(m_mode == "C0Var")
    {
-      rv = Strehl();
+      rv = C0Var();
+   }
+   else if (m_mode == "C0Con")
+   {
+      rv = C0Con();
+   }
+   else if(m_mode == "C1Var")
+   {
+      rv = C1Var();
+   }
+   else if (m_mode == "C1Con")
+   {
+      rv = C1Con();
+   }
+   else if(m_mode == "C2Var")
+   {
+      rv = C2Var();
+   }
+   else if (m_mode == "C2Con")
+   {
+      rv = C2Con();
+   }
+   else if(m_mode == "C3Var")
+   {
+      rv = C3Var();
+   }
+   else if (m_mode == "C3Con")
+   {
+      rv = C3Con();
+   }
+   else if(m_mode == "C4Var")
+   {
+      rv = C4Var();
+   }
+   else if (m_mode == "C4Con")
+   {
+      rv = C4Con();
+   }
+   else if(m_mode == "C5Var")
+   {
+      rv = C5Var();
+   }
+   else if (m_mode == "C5Con")
+   {
+      rv = C5Con();
+   }
+   else if(m_mode == "C6Var")
+   {
+      rv = C6Var();
+   }
+   else if (m_mode == "C6Con")
+   {
+      rv = C6Con();
+   }
+   else if(m_mode == "C7Var")
+   {
+      rv = C7Var();
+   }
+   else if (m_mode == "C7Con")
+   {
+      rv = C7Con();
+   }
+   else if (m_mode == "CVarAll")
+   {
+      rv = CVarAll();
+   }
+   else if (m_mode == "CConAll")
+   {
+      rv = CConAll();
    }
    else if (m_mode == "temporalPSD")
    {
@@ -725,20 +733,25 @@ int mxAOSystem_app<realT>::execute()
    }
    else
    {
-      std::cerr << "Unknown mode: " << m_mode << "\n";
+      std::cerr << "Unknown mode: " << m_mode << "\n\n";
       rv = -1;
    }
    
-   
-   
-   if(m_dumpSetup && rv == 0)
+   if(m_dumpSetup)
    {
       std::ofstream fout;
-      fout.open(setupOutName);
+      fout.open(m_setupOutName);
       
-      aosys.dumpAOSystem(fout);
+      dumpSetup(fout);
       
       fout.close();
+   }
+
+   if(rv < 0)
+   {
+      std::cerr << "An error occurred. Please use -h or --help to get help.";
+      if(m_dumpSetup) std::cerr << "  Current settings written to " << m_setupOutName;
+      std::cerr << "\n";
    }
    
    return rv;
@@ -762,9 +775,9 @@ int mxAOSystem_app<realT>::C_MapCon( const std::string & mapFile,
    
    mx::AO::analysis::varmapToImage(im, map, psf);
    
-   for(int i=0; i< mnMap; ++i)
+   for(int i=0; i< m_aosys.fit_mn_max(); ++i)
    {
-      std::cout << i << " " << im( mnMap+1, mnMap+1 + i) << "\n";
+      std::cout << i << " " << im( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << "\n";
    }
    
    mx::fits::fitsFile<realT> ff;
@@ -774,225 +787,294 @@ int mxAOSystem_app<realT>::C_MapCon( const std::string & mapFile,
 }
 
 template<typename realT>
-int mxAOSystem_app<realT>::C0Raw()
+int mxAOSystem_app<realT>::C0Var()
 {
    imageT map;
    
-   map.resize( mnMap*2+1, mnMap*2 + 1);
-   aosys.C0Map(map);
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
+   m_aosys.C0Map(map);
    
    mx::fits::fitsFile<realT> ff;
-   ff.write("C0Raw.fits", map);
+   ff.write("C0Var.fits", map);
    
-   for(int i=0;i< aosys.fit_mn_max(); ++i)
+   for(int i=0;i< m_aosys.fit_mn_max(); ++i)
    {
-      std::cout << i << " " << aosys.C0(i,0, false) << "\n";
+      std::cout << i << " " << m_aosys.C0(i,0, false) << "\n";
    }
    
    return 0;
 }
 
 template<typename realT>
-int mxAOSystem_app<realT>::C0Map()
+int mxAOSystem_app<realT>::C0Con()
 {
    imageT map;
    
-   map.resize( mnMap*2+1, mnMap*2 + 1);
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
    
-   aosys.C0Map(map);
+   m_aosys.C0Map(map);
    
-   C_MapCon("C0Map.fits", map);
+   C_MapCon("C0Con.fits", map);
    
    return 0;
 }
 
 template<typename realT>
-int mxAOSystem_app<realT>::C1Raw()
+int mxAOSystem_app<realT>::C1Var()
 {
    imageT map;
    
-   map.resize( mnMap*2+1, mnMap*2 + 1);
-   aosys.C1Map(map);
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
+   m_aosys.C1Map(map);
    
    mx::fits::fitsFile<realT> ff;
-   ff.write("C1Raw.fits", map);
+   ff.write("C1Var.fits", map);
    
-   for(int i=0;i< aosys.fit_mn_max(); ++i)
+   for(int i=0;i< m_aosys.fit_mn_max(); ++i)
    {
-      std::cout << i << " " << aosys.C1(i,0, false) << "\n";
+      std::cout << i << " " << m_aosys.C1(i,0, false) << "\n";
    }
    
    return 0;
 }
 
 template<typename realT>
-int mxAOSystem_app<realT>::C1Map()
+int mxAOSystem_app<realT>::C1Con()
 {
    imageT map;
    
-   map.resize( mnMap*2+1, mnMap*2 + 1);
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
    
-   aosys.C1Map(map);
+   m_aosys.C1Map(map);
    
-   C_MapCon("C1Map.fits", map);
+   C_MapCon("C1Con.fits", map);
    
    return 0;
 }
 
 template<typename realT>
-int mxAOSystem_app<realT>::C2Raw()
+int mxAOSystem_app<realT>::C2Var()
 {
    imageT map;
    
-   map.resize( mnMap*2+1, mnMap*2 + 1);
-   aosys.C2Map(map);
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
+   m_aosys.C2Map(map);
    
    mx::fits::fitsFile<realT> ff;
-   ff.write("C2Raw.fits", map);
+   ff.write("C2Var.fits", map);
    
-   for(int i=0;i< aosys.fit_mn_max(); ++i)
+   for(int i=0;i< m_aosys.fit_mn_max(); ++i)
    {
-      std::cout << i << " " << aosys.C2(i,0, false) << "\n";
+      std::cout << i << " " << m_aosys.C2(i,0, false) << "\n";
    }
    
    return 0;
 }
 
 template<typename realT>
-int mxAOSystem_app<realT>::C2Map()
+int mxAOSystem_app<realT>::C2Con()
 {
    imageT map;
    
-   map.resize( mnMap*2+1, mnMap*2 + 1);
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
    
-   aosys.C2Map(map);
+   m_aosys.C2Map(map);
    
-   C_MapCon("C2Map.fits", map);
+   C_MapCon("C2Con.fits", map);
    
    return 0;
 }
 
 template<typename realT>
-int mxAOSystem_app<realT>::C4Raw()
+int mxAOSystem_app<realT>::C3Var()
 {
    imageT map;
    
-   map.resize( mnMap*2+1, mnMap*2 + 1);
-   aosys.C4Map(map);
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
+   m_aosys.C3Map(map);
    
    mx::fits::fitsFile<realT> ff;
-   ff.write("C4Raw.fits", map);
+   ff.write("C3Var.fits", map);
    
-   for(int i=0;i< aosys.fit_mn_max(); ++i)
+   for(int i=0;i< m_aosys.fit_mn_max(); ++i)
    {
-      std::cout << i << " " << aosys.C4(i,0, false) << "\n";
+      std::cout << i << " " << m_aosys.C3(i,0, false) << "\n";
    }
    
    return 0;
 }
 
 template<typename realT>
-int mxAOSystem_app<realT>::C4Map()
+int mxAOSystem_app<realT>::C3Con()
 {
    imageT map;
    
-   map.resize( mnMap*2+1, mnMap*2 + 1);
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
    
-   aosys.C4Map(map);
+   m_aosys.C3Map(map);
    
-   C_MapCon("C4Map.fits", map);
+   C_MapCon("C3Con.fits", map);
    
    return 0;
 }
 
 template<typename realT>
-int mxAOSystem_app<realT>::C6Raw()
+int mxAOSystem_app<realT>::C4Var()
 {
    imageT map;
    
-   map.resize( mnMap*2+1, mnMap*2 + 1);
-   aosys.C6Map(map);
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
+   m_aosys.C4Map(map);
    
    mx::fits::fitsFile<realT> ff;
-   ff.write("C6Raw.fits", map);
+   ff.write("C4Var.fits", map);
    
-   for(int i=0;i< aosys.fit_mn_max(); ++i)
+   for(int i=0;i< m_aosys.fit_mn_max(); ++i)
    {
-      std::cout << i << " " << aosys.C6(i,0, false) << "\n";
+      std::cout << i << " " << m_aosys.C4(i,0, false) << "\n";
    }
    
    return 0;
-   
 }
 
 template<typename realT>
-int mxAOSystem_app<realT>::C6Map()
+int mxAOSystem_app<realT>::C4Con()
 {
    imageT map;
    
-   map.resize( mnMap*2+1, mnMap*2 + 1);
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
    
-   aosys.C6Map(map);
+   m_aosys.C4Map(map);
    
-   C_MapCon("C6Map.fits", map);
+   C_MapCon("C4Con.fits", map);
    
    return 0;
-
 }
 
-
 template<typename realT>
-int mxAOSystem_app<realT>::C7Raw()
+int mxAOSystem_app<realT>::C5Var()
 {
    imageT map;
    
-   map.resize( mnMap*2+1, mnMap*2 + 1);
-   aosys.C7Map(map);
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
+   m_aosys.C5Map(map);
    
    mx::fits::fitsFile<realT> ff;
-   ff.write("C7Raw.fits", map);
+   ff.write("C5Var.fits", map);
    
-   for(int i=0;i< aosys.fit_mn_max(); ++i)
+   for(int i=0;i< m_aosys.fit_mn_max(); ++i)
    {
-      std::cout << i << " " << aosys.C7(i,0, false) << "\n";
+      std::cout << i << " " << m_aosys.C5(i,0, false) << "\n";
    }
    
    return 0;
-   
 }
 
 template<typename realT>
-int mxAOSystem_app<realT>::C7Map()
+int mxAOSystem_app<realT>::C5Con()
 {
    imageT map;
    
-   map.resize( mnMap*2+1, mnMap*2 + 1);
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
    
-   aosys.C7Map(map);
+   m_aosys.C5Map(map);
    
-   C_MapCon("C7Map.fits", map);
+   C_MapCon("C5Con.fits", map);
    
    return 0;
 }
 
 template<typename realT>
-int mxAOSystem_app<realT>::CAllRaw()
+int mxAOSystem_app<realT>::C6Var()
 {
-   for(int i=0;i< aosys.fit_mn_max(); ++i)
+   imageT map;
+   
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
+   m_aosys.C6Map(map);
+   
+   mx::fits::fitsFile<realT> ff;
+   ff.write("C6Var.fits", map);
+   
+   for(int i=0;i< m_aosys.fit_mn_max(); ++i)
    {
-      std::cout << i << " " << aosys.C0(i,0, false) << " " << aosys.C1(i,0, false) << " " << aosys.C2(i,0, false) << " " << aosys.C4(i,0, false);
-      std::cout << " " << aosys.C6(i,0, false) << " " << aosys.C7(i,0, false) << "\n";
+      std::cout << i << " " << m_aosys.C6(i,0, false) << "\n";
+   }
+   
+   return 0;
+   
+}
+
+template<typename realT>
+int mxAOSystem_app<realT>::C6Con()
+{
+   imageT map;
+   
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
+   
+   m_aosys.C6Map(map);
+   
+   C_MapCon("C6Con.fits", map);
+   
+   return 0;
+
+}
+
+template<typename realT>
+int mxAOSystem_app<realT>::C7Var()
+{
+   imageT map;
+   
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
+   m_aosys.C7Map(map);
+   
+   mx::fits::fitsFile<realT> ff;
+   ff.write("C7Var.fits", map);
+   
+   for(int i=0;i< m_aosys.fit_mn_max(); ++i)
+   {
+      std::cout << i << " " << m_aosys.C7(i,0, false) << "\n";
+   }
+   
+   return 0;
+   
+}
+
+template<typename realT>
+int mxAOSystem_app<realT>::C7Con()
+{
+   imageT map;
+   
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
+   
+   m_aosys.C7Map(map);
+   
+   C_MapCon("C7Con.fits", map);
+   
+   return 0;
+}
+
+template<typename realT>
+int mxAOSystem_app<realT>::CVarAll()
+{
+   std::cout << "# Residual Variance Profiles\n";
+   std::cout << "# sep[lam/d]    C0    C1    C2    C3    C4    C5    C6   C7\n";
+   for(int i=0;i< m_aosys.fit_mn_max(); ++i)
+   {
+      std::cout << i << " " << m_aosys.C0(i,0, false) << " " << m_aosys.C1(i,0, false) << " ";
+      std::cout << m_aosys.C2(i,0, false) << " " << m_aosys.C3(i,0, false) << " ";
+      std::cout << m_aosys.C4(i,0, false) << " " << m_aosys.C5(i,0, false) << " ";
+      std::cout << m_aosys.C6(i,0, false) << " " << m_aosys.C7(i,0, false) << "\n";
    }
    
    return 0;
 }
 
 template<typename realT>
-int mxAOSystem_app<realT>::CProfAll()
+int mxAOSystem_app<realT>::CConAll()
 {
-   imageT map, im0, im1, im2, im4, im6, im7;
+   imageT map, im0, im1, im2, im3, im4, im5, im6, im7;
 
-   map.resize( mnMap*2+1, mnMap*2 + 1);
+   map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
    
    imageT psf;
    
@@ -1005,30 +1087,38 @@ int mxAOSystem_app<realT>::CProfAll()
       }
    }
    
-   aosys.C0Map(map);
+   m_aosys.C0Map(map);
    mx::AO::analysis::varmapToImage(im0, map, psf);
    
-   aosys.C1Map(map);
+   m_aosys.C1Map(map);
    mx::AO::analysis::varmapToImage(im1, map, psf);
 
-   aosys.C2Map(map);
+   m_aosys.C2Map(map);
    mx::AO::analysis::varmapToImage(im2, map, psf);
    
-   aosys.C4Map(map);
+   m_aosys.C3Map(map);
+   mx::AO::analysis::varmapToImage(im3, map, psf);
+
+   m_aosys.C4Map(map);
    mx::AO::analysis::varmapToImage(im4, map, psf);
    
-   aosys.C6Map(map);
+   m_aosys.C5Map(map);
+   mx::AO::analysis::varmapToImage(im5, map, psf);
+
+   m_aosys.C6Map(map);
    mx::AO::analysis::varmapToImage(im6, map, psf);
    
-   aosys.C7Map(map);
+   m_aosys.C7Map(map);
    mx::AO::analysis::varmapToImage(im7, map, psf);
    
-   std::cout << "#PSF-convolved PSF profiles.\n";
-   std::cout << "#Sep    C0    C1    C2    C4     C6    C7\n";
-   for(int i=0;i< mnMap; ++i)
+   std::cout << "# Residual Contrast Profiles\n";
+   std::cout << "# sep[lam/d]    C0    C1    C2    C3    C4    C5    C6   C7\n";
+   for(int i=0;i< m_aosys.fit_mn_max(); ++i)
    {
-      std::cout << i << " " << im0( mnMap+1, mnMap+1 + i) << " " << im1( mnMap+1, mnMap+1 + i) << " " << im2( mnMap+1, mnMap+1 + i) << " ";
-      std::cout << im4( mnMap+1, mnMap+1 + i) << " " << im6( mnMap+1, mnMap+1 + i) << " " << im7( mnMap+1, mnMap+1 + i) << "\n";      
+      std::cout << i << " " << im0( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " " << im1( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " ";
+      std::cout << im2( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " " << im3( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " ";
+      std::cout << im4( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " " << im5( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " ";
+      std::cout << im6( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " " << im7( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << "\n";      
    }
    
    return 0;
@@ -1041,46 +1131,38 @@ int mxAOSystem_app<realT>::ErrorBudget()
    
    if(wfeUnits == "nm")
    {
-      std::cerr << aosys.lam_sci() << "\n";
-      units = aosys.lam_sci() / (mx::math::two_pi<realT>()) / 1e-9;
+      std::cerr << m_aosys.lam_sci() << "\n";
+      units = m_aosys.lam_sci() / (mx::math::two_pi<realT>()) / 1e-9;
    }
    
    if(m_starMags.size() == 0)
    {
-      std::cout << "Measurement: " << sqrt(aosys.measurementError())*units << "\n";
-      std::cout << "Time-delay:  " << sqrt(aosys.timeDelayError())*units << "\n";
-      std::cout << "Fitting:     " << sqrt(aosys.fittingError())*units << "\n";
-      std::cout << "NCP error:   " << sqrt(aosys.ncpError())*units << "\n";
-      std::cout << "Strehl:      " << aosys.strehl() << "\n";
+      std::cout << "Measurement: " << sqrt(m_aosys.measurementError())*units << "\n";
+      std::cout << "Time-delay:  " << sqrt(m_aosys.timeDelayError())*units << "\n";
+      std::cout << "Fitting:     " << sqrt(m_aosys.fittingError())*units << "\n";
+      std::cout << "NCP error:   " << sqrt(m_aosys.ncpError())*units << "\n";
+      std::cout << "Strehl:      " << m_aosys.strehl() << "\n";
    }
    else
    {
-      std::cout << "#mag     d_opt        Measurement     Time-delay      Fitting    Chr-Scint-OPD      Chr-Index   Disp-Ansio-OPD  NCP-error         Strehl\n";
+      std::cout << "#mag\t    d_opt\t  Measurement\t   TimeDelay\t Fitting\t ChrScintOPD\t    ChrIndex\t    DispAnisoOPD    NCP    \t     Strehl\n";
       
       for(size_t i=0; i< m_starMags.size(); ++i)
       {
                
-         aosys.starMag(m_starMags[i]);
+         m_aosys.starMag(m_starMags[i]);
          std::cout << m_starMags[i] << "\t    ";
-         std::cout << aosys.d_opt() << "\t  ";
-         std::cout << sqrt(aosys.measurementError())*units << "\t   ";
-         std::cout << sqrt(aosys.timeDelayError())*units << "\t ";
-         std::cout << sqrt(aosys.fittingError())*units << "\t ";
-         std::cout << sqrt(aosys.chromScintOPDError())*units << "\t    ";
-         std::cout << sqrt(aosys.chromIndexError())*units << "\t\t    ";
-         std::cout << sqrt(aosys.dispAnisoOPDError())*units << "\t    ";
-         std::cout << sqrt(aosys.ncpError())*units << "\t\t";
-         std::cout << aosys.strehl() << "\n";
+         std::cout << m_aosys.d_opt() << "\t  ";
+         std::cout << sqrt(m_aosys.measurementError())*units << "\t   ";
+         std::cout << sqrt(m_aosys.timeDelayError())*units << "\t ";
+         std::cout << sqrt(m_aosys.fittingError())*units << "\t ";
+         std::cout << sqrt(m_aosys.chromScintOPDError())*units << "\t    ";
+         std::cout << sqrt(m_aosys.chromIndexError())*units << "\t    ";
+         std::cout << sqrt(m_aosys.dispAnisoOPDError())*units << "\t    ";
+         std::cout << sqrt(m_aosys.ncpError())*units << "\t    ";
+         std::cout << m_aosys.strehl() << "\n";
       }
    }
-   
-   return 0;
-}
-
-template<typename realT>
-int mxAOSystem_app<realT>::Strehl()
-{
-   std::cout << aosys.strehl() << "\n";
    
    return 0;
 }
@@ -1090,10 +1172,10 @@ int mxAOSystem_app<realT>::temporalPSD()
 {
    std::vector<realT> freq, psdOL, psdN, psdSI, psdLP;
 
-   mx::AO::analysis::fourierTemporalPSD<realT, aosysT> ftPSD;
-   ftPSD.m_aosys = &aosys;
+   mx::AO::analysis::fourierTemporalPSD<realT, m_aosysT> ftPSD;
+   ftPSD.m_aosys = &m_aosys;
    
-   if(aosys.tauWFS() <= 0)
+   if(m_aosys.tauWFS() <= 0)
    {
       std::cerr << "temporalPSD: You must set tauWFS to be > 0 to specify loop frequency.\n";
       return -1;
@@ -1105,7 +1187,7 @@ int mxAOSystem_app<realT>::temporalPSD()
       return -1;
    }
    
-   realT fs = 1.0/aosys.tauWFS();
+   realT fs = 1.0/m_aosys.tauWFS();
    
    mx::math::vectorScale(freq, 0.5*fs/m_dfreq, m_dfreq, m_dfreq);
    psdOL.resize(freq.size());
@@ -1114,13 +1196,13 @@ int mxAOSystem_app<realT>::temporalPSD()
    
    //Create WFS Noise PSD
    psdN.resize(freq.size());
-   mx::AO::analysis::wfsNoisePSD<realT>( psdN, aosys.beta_p(k_m,k_n), aosys.Fg(), (1.0/fs), aosys.npix_wfs((size_t) 0), aosys.Fbg((size_t) 0), aosys.ron_wfs((size_t) 0));
+   mx::AO::analysis::wfsNoisePSD<realT>( psdN, m_aosys.beta_p(k_m,k_n), m_aosys.Fg(), (1.0/fs), m_aosys.npix_wfs((size_t) 0), m_aosys.Fbg((size_t) 0), m_aosys.ron_wfs((size_t) 0));
    
    //optimize
    mx::AO::analysis::clAOLinearPredictor<realT> tflp;
             
-   mx::AO::analysis::clGainOpt<realT> go_si(aosys.tauWFS(), aosys.deltaTau());
-   mx::AO::analysis::clGainOpt<realT> go_lp(aosys.tauWFS(), aosys.deltaTau());
+   mx::AO::analysis::clGainOpt<realT> go_si(m_aosys.tauWFS(), m_aosys.deltaTau());
+   mx::AO::analysis::clGainOpt<realT> go_lp(m_aosys.tauWFS(), m_aosys.deltaTau());
             
    go_si.f(freq);
    
@@ -1241,8 +1323,8 @@ int mxAOSystem_app<realT>::temporalPSD()
 template<typename realT>
 int mxAOSystem_app<realT>::temporalPSDGrid()
 {
-   mx::AO::analysis::fourierTemporalPSD<realT, aosysT> ftPSD;
-   ftPSD.m_aosys = &aosys;
+   mx::AO::analysis::fourierTemporalPSD<realT, m_aosysT> ftPSD;
+   ftPSD.m_aosys = &m_aosys;
    
    if(gridDir == "")
    {
@@ -1250,7 +1332,7 @@ int mxAOSystem_app<realT>::temporalPSDGrid()
       return -1;
    }
    
-   if(aosys.fit_mn_max() <= 0)
+   if(m_aosys.fit_mn_max() <= 0)
    {
       std::cerr << "temporalPSDGrid: You must set fit_mn_max to be > 0.\n";
       return -1;
@@ -1263,15 +1345,15 @@ int mxAOSystem_app<realT>::temporalPSDGrid()
       return -1;
    }
    
-   if(aosys.tauWFS() <= 0)
+   if(m_aosys.tauWFS() <= 0)
    {
       std::cerr << "temporalPSDGrid: You must set tauWFS to be > 0 to specify loop frequency.\n";
       return -1;
    }
    
-   realT fs = 1.0/aosys.tauWFS();
+   realT fs = 1.0/m_aosys.tauWFS();
    
-   ftPSD.makePSDGrid( gridDir, aosys.fit_mn_max(), m_dfreq, fs, 0);
+   ftPSD.makePSDGrid( gridDir, m_aosys.fit_mn_max(), m_dfreq, fs, 0);
    
    return 0;
 }
@@ -1279,8 +1361,8 @@ int mxAOSystem_app<realT>::temporalPSDGrid()
 template<typename realT>
 int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
 {
-   mx::AO::analysis::fourierTemporalPSD<realT, aosysT> ftPSD;
-   ftPSD.m_aosys = &aosys;
+   mx::AO::analysis::fourierTemporalPSD<realT, m_aosysT> ftPSD;
+   ftPSD.m_aosys = &m_aosys;
    
    if(gridDir == "")
    {
@@ -1294,27 +1376,27 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
       return -1;
    }
    
-   if(aosys.fit_mn_max() <= 0)
+   if(m_aosys.fit_mn_max() <= 0)
    {
       std::cerr << "temporalPSDGridAnalyze: You must set fit_mn_max to be > 0.\n";
       return -1;
    }
       
-   int mnCon = aosys.D()/aosys.d_min()/2;
+   int mnCon = m_aosys.D()/m_aosys.d_min()/2;
    
 
    std::vector<realT> mags;
    
    if(m_starMags.size() == 0)
    {
-      mags = { aosys.starMag() };
+      mags = { m_aosys.starMag() };
    }
    else
    {
       mags = m_starMags;
    }
    
-   return ftPSD.analyzePSDGrid( subDir, gridDir, aosys.fit_mn_max(), mnCon, lpNc, mags, m_lifetimeTrials, m_uncontrolledLifetimes, m_writePSDs, m_writeXfer); 
+   return ftPSD.analyzePSDGrid( subDir, gridDir, m_aosys.fit_mn_max(), mnCon, lpNc, mags, m_lifetimeTrials, m_uncontrolledLifetimes, m_writePSDs, m_writeXfer); 
    
 }
 
@@ -1345,11 +1427,13 @@ iosT & mxAOSystem_app<realT>::dumpSetup( iosT & ios)
       ios << "#    fmax = " << m_fmax << '\n';
       ios << "#    lpNc = " << lpNc << '\n';
    }
-   
-   ios << "#    Software version: " << '\n';
-   ios << "#       aoSystem sha1 = " << AOSYSTEM_GIT_CURRENT_SHA1 << '\n';
-   ios << "#       aoSystem modified = " << AOSYSTEM_GIT_REPO_MODIFIED << '\n';
-   aosys.dumpAOSystem(ios);
+
+   m_aosys.dumpAOSystem(ios);
+
+   ios << "#    aoSystem branch = " << AOSYSTEM_GIT_BRANCH << '\n';
+   ios << "#    aoSystem sha1 = " << AOSYSTEM_GIT_CURRENT_SHA1;
+   if(AOSYSTEM_GIT_REPO_MODIFIED) ios << " (modified)";
+   ios << '\n';
    
    return ios;
 }
@@ -1358,9 +1442,9 @@ int main(int argc, char ** argv)
 {
    mx::math::fft::fftwEnvironment<double,false> fftwEnv;
  
-   mxAOSystem_app<double> aosysA;
+   mxAOSystem_app<double> m_aosysA;
 
-   return aosysA.main(argc, argv);
+   return m_aosysA.main(argc, argv);
    
 }
 
