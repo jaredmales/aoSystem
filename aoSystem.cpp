@@ -1027,7 +1027,7 @@ int mxAOSystem_app<realT>::CProfAll()
    std::cout << "#Sep    C0    C1    C2    C4     C6    C7\n";
    for(int i=0;i< mnMap; ++i)
    {
-      std::cout << i << " " << im0( mnMap+1, mnMap+1 + i) << " " << im1( mnMap+1, mnMap+1 + i) << " " << im2( mnMap+1, mnMap+1 + i) << " ";
+      std::cout << i+1 << " " << im0( mnMap+1, mnMap+1 + i) << " " << im1( mnMap+1, mnMap+1 + i) << " " << im2( mnMap+1, mnMap+1 + i) << " ";
       std::cout << im4( mnMap+1, mnMap+1 + i) << " " << im6( mnMap+1, mnMap+1 + i) << " " << im7( mnMap+1, mnMap+1 + i) << "\n";      
    }
    
