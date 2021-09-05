@@ -1115,7 +1115,7 @@ int mxAOSystem_app<realT>::CConAll()
    std::cout << "# sep[lam/d]    C0    C1    C2    C3    C4    C5    C6   C7\n";
    for(int i=0;i< m_aosys.fit_mn_max(); ++i)
    {
-      std::cout << i << " " << im0( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " " << im1( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " ";
+      std::cout << i+1 << " " << im0( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " " << im1( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " ";
       std::cout << im2( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " " << im3( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " ";
       std::cout << im4( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " " << im5( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " ";
       std::cout << im6( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << " " << im7( m_aosys.fit_mn_max()+1, m_aosys.fit_mn_max()+1 + i) << "\n";      
