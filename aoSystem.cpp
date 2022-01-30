@@ -168,7 +168,7 @@ mxAOSystem_app<realT>::mxAOSystem_app()
    
    lam_0 = 0;
     
-   m_aosys.wfsBeta( idealWFS );
+   //m_aosys.wfsBeta( idealWFS );
    
    wfeUnits = "rad";
    
@@ -195,52 +195,14 @@ void mxAOSystem_app<realT>::setupConfig()
    //Load a model
    config.add("model"        ,"", "model" , argType::Required, "", "model", false, "string", "Model to load: Guyon2005, MagAOX, or GMagAOX");
    
-   //Atmosphere configuration
-   config.add("lam_0"        ,"", "lam_0" , argType::Required, "atmosphere", "lam_0",        false, "real",        "The reference wavlength for r_0 [m]");
-   config.add("r_0"          ,"", "r_0"   , argType::Required, "atmosphere", "r_0",          false, "real",        "Fried's parameter [m]");
-   config.add("L_0"          ,"", "L_0"   , argType::Required, "atmosphere", "L_0",          false, "real",        "Outer scale [m]");
-   config.add("layer_Cn2"    ,"", ""      , argType::None,     "atmosphere", "layer_Cn2",    false, "real vector", "Layer Cn^2");  
-   config.add("layer_v_wind" ,"", ""      , argType::None,     "atmosphere", "layer_v_wind", false, "real vector", "Layer wind speeds [m/s]");
-   config.add("layer_dir"    ,"", ""      , argType::None,     "atmosphere", "layer_dir",    false, "real vector", "Layer wind directions [rad]");
-   config.add("layer_z"      ,"", ""      , argType::None,     "atmosphere", "layer_z",      false, "real vector", "layer heights [m]");
-   config.add("h_obs"        ,"", ""      , argType::None,     "atmosphere", "h_obs",        false, "real",        "height of observatory [m]");
-   config.add("H"            ,"", ""      , argType::None,     "atmosphere", "H",            false, "real",        "atmospheric scale heights [m]");
-   config.add("v_wind"       ,"", "v_wind", argType::Required, "atmosphere", "v_wind",       false, "real",        "Mean windspeed (5/3 momement), rescales layers [m/s]");
-   config.add("z_mean"       ,"", "z_mean", argType::Required, "atmosphere", "z_mean",       false, "real",        "Mean layer height (5/3 momemnt), rescales layers [m/s]");
+   m_aosys.setupConfig(config);
    
    //PSD Configuration
    config.add("subTipTilt"    ,"", "subTipTilt",    argType::Required, "PSD", "subTipTilt",    false, "bool",   "If set to true, the Tip/Tilt component is subtracted from the PSD.");
    config.add("scintillation" ,"", "scintillation", argType::Required, "PSD", "scintillation", false, "bool",   "If set to true, then scintillation is included in the PSD.");
    config.add("component"     ,"", "component",     argType::Required, "PSD", "component",     false, "string", "Can be phase [default], amplitude, or dispersion.");
    
-   //AO System configuration
-   config.add("wfs"           ,"", "wfs"           , argType::Required, "system", "wfs",            false, "string", "The WFS type: idealWFS, unmodPyWFS, asympModPyWFS");
-   config.add("D"             ,"", "D"             , argType::Required, "system", "D",              false, "real", "The telescope diameter [m]");
-   config.add("d_min"         ,"", "d_min"         , argType::Required, "system", "d_min",          false, "real", "The minimum actuator spacing [m]");
-   config.add("optd"          ,"", "optd"          , argType::Optional, "system", "optd",           false, "bool", "Whether or not the actuator spacing is optimized");
-   config.add("optd_delta"    ,"", "optd_delta"    , argType::Required, "system", "optd_delta",     false, "bool", "The fractional change from d_min used in optimization.  Set to 1 (default) for integer binnings, > 1 for finer sampling.");
-   config.add("F0"            ,"", "F0"            , argType::Required, "system", "F0",             false, "real", "Zero-mag photon flux, [photons/sec]");     
-   config.add("lam_wfs"       ,"", "lam_wfs"       , argType::Required, "system", "lam_wfs",        false, "real", "WFS wavelength [m]" );
-   config.add("npix_wfs"      ,"", "npix_wfs"      , argType::Required, "system", "npix_wfs",       false, "real", "The number of pixels in the WFS");
-   config.add("ron_wfs"       ,"", "ron_wfs"       , argType::Required, "system", "ron_wfs",        false, "real", "WFS readout noise [photons/read]");
-   config.add("bin_npix"      ,"", "bin_npix"      , argType::Required, "system", "bin_npix",       false, "bool", "Whether or not WFS pixels are re-binned along with actuator spacing optimization");
-   config.add("Fbg"           ,"", "Fbg"           , argType::Required, "system", "Fbg",            false, "real", "Background counts, [counts/pix/sec]");\
-   config.add("tauWFS"        ,"", "tauWFS"        , argType::Required, "system", "tauWFS",         false, "real", "WFS integration time [s]");
-   config.add("minTauWFS"     ,"", "minTauWFS"     , argType::Required, "system", "minTauWFS",      false, "real", "Minimum WFS integration time [s]");
-   config.add("deltaTau"      ,"", "deltaTau"      , argType::Required, "system", "deltaTau",       false, "real", "Loop delay [s]");
-   config.add("optTau"        ,"", "optTau"        , argType::Optional, "system", "optTau",         false, "bool", "Whether or not the integration time is optimized");
-   config.add("lam_sci"       ,"", "lam_sci"       , argType::Required, "system", "lam_sci",        false, "real", "Science wavelength [m]");
-   config.add("zeta"          ,"", "zeta"          , argType::Required, "system", "zeta",           false, "real", "Zenith distance [rad]");
-   config.add("fit_mn_max"    ,"", "fit_mn_max"    , argType::Required, "system", "fit_mn_max",     false, "real", "Maximum spatial frequency index to use for analysis");
    
-   config.add("spatialFilter_ku", "", "spatialFilter_ku", argType::Required, "system", "spatialFilter_ku",     false, "real", "Spatial filter cutoff frequency in u [m^-1]");
-   config.add("spatialFilter_kv", "", "spatialFilter_kv", argType::Required, "system", "spatialFilter_kv",     false, "real", "Spatial filter cutoff frequency in v [m^-1]");
-   
-   config.add("ncp_wfe"       ,"", "ncp_wfe"       , argType::Required, "system", "ncp_wfe",        false, "real", "NCP WFE between 1 lambda/D and fit_mn_max [rad^2]");
-   config.add("ncp_alpha"     ,"", "ncp_alpha"     , argType::Required, "system", "ncp_alpha",      false, "real", "PSD index for NCP WFE");
-   config.add("starMag"       ,"", "starMag"       , argType::Required,  "system", "starMag",       false, "real", "Star magnitude");
-   config.add("starMags"      ,"", "starMags"      , argType::Required,  "system", "starMags",      false, "real vector", "A vector of star magnitudes");
-   config.add("circularLimit" ,"", "circularLimit" , argType::Optional,  "system", "circularLimit", false, "bool", " Flag to indicate that the spatial frequency limit is circular, not square.");
    
    //Temporal configuration
    config.add("fmax"     ,"", "fmax"    , argType::Required,  "temporal", "fmax",     false, "real", "Maximum temporal frequency at which to explicitly calculate PSDs.  If 0 (default) this is based on highest wind peak.  A -17/3 power law is used above this frequency.");
@@ -292,79 +254,9 @@ void mxAOSystem_app<realT>::loadConfig()
       }
    }
 
-   /**********************************************************/
-   /* Atmosphere                                             */
-   /**********************************************************/
+   m_aosys.loadConfig(config);
    
-   //The order of l0, Cn2, and r_0 is so that r_0 overrides the value set with Cn2 if l0 != 0.
-   //lam_0 comes first because it calibrates r0 and Cn2
-   config(lam_0, "lam_0");
-   
-   //layer Cn2
-   if( config.isSet("layer_Cn2") )
-   {
-      std::vector<realT> lcn2 = m_aosys.atm.layer_Cn2();
-      config(lcn2, "layer_Cn2");
-      m_aosys.atm.layer_Cn2(lcn2, lam_0);
-   }
-   
-   //r_0
-   if(config.isSet("r_0") )
-   {
-      realT r_0;
-      config(r_0, "r_0");
-      m_aosys.atm.r_0(r_0, lam_0);
-   }
-   
-   //Outer scale
-   if(config.isSet("L_0") )
-   {
-      realT L_0;
-      config(L_0, "L_0");
-      m_aosys.atm.L_0(L_0);
-   }
-   
-   //layer winds
-   if( config.isSet("layer_v_wind") )
-   {
-      std::vector<realT> lvw = m_aosys.atm.layer_v_wind();
-      config(lvw, "layer_v_wind");
-      
-      m_aosys.atm.layer_v_wind(lvw);
-   }
-   
-   //layer direction
-   if( config.isSet("layer_dir") )
-   {
-      std::vector<realT> ld = m_aosys.atm.layer_dir();
-      config(ld, "layer_dir");
-      m_aosys.atm.layer_dir(ld);
-   }
- 
-   if( config.isSet("layer_z") )
-   {
-      std::vector<realT> lz = m_aosys.atm.layer_z();
-      config(lz, "layer_z");
-      
-      m_aosys.atm.layer_z(lz);
-   }
-   
-
-   //v_wind --> this rescales layer_v_wind
-   if(config.isSet("v_wind") )
-   {
-      realT  vw = m_aosys.atm.v_wind();
-      config(vw, "v_wind");
-      m_aosys.atm.v_wind(vw);
-   }
-
-   //z_mean --> this rescales layer_z
-   if(config.isSet("z_mean") )
-   {
-      realT zm = m_aosys.atm.z_mean();
-      config(zm, "z_mean");
-      m_aosys.atm.z_mean(zm);
-   }
+   config.add("aosys.starMags","", "aosys.starMags",argType::Required,"aosys","starMags",false, "real vector", "A vector of star magnitudes");
 
    /**********************************************************/
    /* PSD                                                    */
@@ -404,194 +296,9 @@ void mxAOSystem_app<realT>::loadConfig()
    /**********************************************************/
    /* System                                                 */
    /**********************************************************/
-   //WFS 
-   if(config.isSet("wfs"))
+   if( config.isSet("aosys.starMags") )
    {
-      std::string wfs;
-      config(wfs, "wfs");
-      
-      if(wfs == "ideal")
-      {
-         m_aosys.wfsBeta(idealWFS);// = &idealWFS;
-      }
-      else if(wfs == "unmodPyWFS")
-      {
-         m_aosys.wfsBeta(unmodPyWFS);// = &unmodPyWFS;
-      }
-      else if(wfs == "asympModPyWFS")
-      {
-         m_aosys.wfsBeta(asympModPyWFS); // = &asympModPyWFS;
-      }
-      else
-      {
-         std::cerr << "Unkown WFS type\n";
-         doHelp = true;
-         
-      }
-   }
-   
-   //diameter
-   if(config.isSet("D") )
-   {
-      realT D = m_aosys.D();
-      config(D, "D");
-      m_aosys.D(D);
-   }
-
-   //d_min
-   if(config.isSet("d_min") )
-   {
-      realT d_min = m_aosys.d_min();
-      config(d_min, "d_min");
-      m_aosys.d_min(d_min);
-   }
-      
-   if(config.isSet("optd"))
-   {
-      bool optd = true;
-      config(optd, "optd");
-      m_aosys.optd(optd);
-   }
-   
-   realT optd_delta = m_aosys.optd_delta();
-   config(optd_delta, "optd_delta");
-   m_aosys.optd_delta(optd_delta);
-   
-   if(config.isSet("circularLimit"))
-   {
-      bool cl = true;
-      config(cl, "circularLimit");
-      m_aosys.circularLimit(cl);
-   }
-   
-   //F0
-   if(config.isSet("F0") )
-   {
-      realT F0 = m_aosys.F0();
-      config(F0, "F0");
-      m_aosys.F0(F0);
-   }
-   
-   
-   //lam_wfs
-   if(config.isSet("lam_wfs") )
-   {
-      realT lam_wfs = m_aosys.lam_wfs();
-      config(lam_wfs, "lam_wfs");
-      
-      m_aosys.lam_wfs(lam_wfs);
-   }
-
-   //npix_wfs   
-   std::vector<realT> npix_wfs;
-   config(npix_wfs, "npix_wfs");   
-   m_aosys.npix_wfs(npix_wfs);
-      
-   //ron_wfs
-   std::vector<realT> rwfs = m_aosys.ron_wfs();
-   config( rwfs, "ron_wfs");
-   m_aosys.ron_wfs(rwfs);
-
-   //Fbg
-   std::vector<realT> Fbg = m_aosys.Fbg();
-   config( Fbg, "Fbg");
-   m_aosys.Fbg(Fbg);
-
-   //minTauWFS
-   std::vector<realT> mtwfs;
-   config( mtwfs, "minTauWFS");
-   m_aosys.minTauWFS(mtwfs);
-   
-   if(config.isSet("bin_npix"))
-   {
-      bool bin_npix = true;
-      config(bin_npix, "bin_npix");
-      m_aosys.bin_npix(bin_npix);
-   }
-   
-    
-   //tauWFS
-   realT twfs = m_aosys.tauWFS();
-   config( twfs, "tauWFS");
-   m_aosys.tauWFS(twfs);
-   
-   
-   //deltaTau
-   realT dt = m_aosys.deltaTau();
-   config( dt, "deltaTau");
-   m_aosys.deltaTau(dt);
-      
-   bool optTau = m_aosys.optTau();
-   config(optTau, "optTau");
-   m_aosys.optTau(optTau);
-   
-   //lam_sci
-   if(config.isSet("lam_sci") )
-   {
-      realT lsci = m_aosys.lam_sci();
-      config( lsci, "lam_sci");
-      m_aosys.lam_sci( lsci );
-   }
-   
-   //zeta
-   if(config.isSet("zeta") )
-   {
-      realT zeta = m_aosys.zeta();
-      config(zeta , "zeta");
-      m_aosys.zeta(zeta);
-   }
-   
-   //fit_mn_max
-   if(config.isSet("fit_mn_max") )
-   {
-      realT fmnm = m_aosys.fit_mn_max();
-      config( fmnm, "fit_mn_max");
-      m_aosys.fit_mn_max(fmnm);
-   }
-   
-   //spatialFilter_ku
-   if(config.isSet("spatialFilter_ku") )
-   {
-      realT ku = m_aosys.spatialFilter_ku();
-      config( ku, "spatialFilter_ku");
-      m_aosys.spatialFilter_ku(ku);
-   }
-   
-   //spatialFilter_kv
-   if(config.isSet("spatialFilter_kv") )
-   {
-      realT kv = m_aosys.spatialFilter_kv();
-      config( kv, "spatialFilter_kv");
-      m_aosys.spatialFilter_kv(kv);
-   }
-   
-   //ncp_wfe
-   if(config.isSet("ncp_wfe") )
-   {
-      realT nwfe = m_aosys.ncp_wfe();
-      config( nwfe, "ncp_wfe");
-      m_aosys.ncp_wfe(nwfe);
-   }
-    
-   //ncp_alpha
-   if(config.isSet("ncp_alpha") )
-   {
-      realT na = m_aosys.ncp_alpha();
-      config( na, "ncp_alpha");
-      m_aosys.ncp_alpha( na );
-   }
-      
-   //star_mag
-   if(config.isSet("starMag") )
-   {
-      realT smag = m_aosys.starMag();
-      config( smag, "starMag");
-      m_aosys.starMag( smag );
-   }
-   
-   if( config.isSet("starMags") )
-   {
-      config( m_starMags, "starMags");
+      config( m_starMags, "aosys.starMags");
    }
    
    /**********************************************************/
