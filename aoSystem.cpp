@@ -64,7 +64,7 @@ public:
 
    typedef Eigen::Array<realT, -1,-1> imageT; ///< The image type
    
-   typedef mx::AO::analysis::aoSystem<realT, mx::AO::analysis::vonKarmanSpectrum<realT>> m_aosysT; ///< The AO system type.
+   typedef mx::AO::analysis::aoSystem<realT, mx::AO::analysis::vonKarmanSpectrum<realT>, std::ostream> m_aosysT; ///< The AO system type.
 
    /// Default constructor
    mxAOSystem_app(); 
@@ -844,28 +844,29 @@ int mxAOSystem_app<realT>::ErrorBudget()
    
    if(m_starMags.size() == 0)
    {
-      std::cout << "Measurement: " << sqrt(m_aosys.measurementError())*units << "\n";
-      std::cout << "Time-delay:  " << sqrt(m_aosys.timeDelayError())*units << "\n";
-      std::cout << "Fitting:     " << sqrt(m_aosys.fittingError())*units << "\n";
+      std::cout << "Measurement: " << sqrt(m_aosys.measurementErrorTotal())*units << "\n";
+      std::cout << "Time-delay:  " << sqrt(m_aosys.timeDelayErrorTotal())*units << "\n";
+      std::cout << "Fitting:     " << sqrt(m_aosys.fittingErrorTotal())*units << "\n";
       std::cout << "NCP error:   " << sqrt(m_aosys.ncpError())*units << "\n";
       std::cout << "Strehl:      " << m_aosys.strehl() << "\n";
    }
    else
    {
-      std::cout << "#mag\t    d_opt\t  Measurement\t   TimeDelay\t Fitting\t ChrScintOPD\t    ChrIndex\t    DispAnisoOPD    NCP    \t     Strehl\n";
+      std::cout << "#mag\t    d\t  bin \t Measurement\t   TimeDelay\t Fitting\t ChrScintOPD\t    ChrIndex\t    DispAnisoOPD    NCP    \t     Strehl\n";
       
       for(size_t i=0; i< m_starMags.size(); ++i)
       {
-               
+         std::cerr << i+1 << "/" << m_starMags.size() << "\n";
          m_aosys.starMag(m_starMags[i]);
          std::cout << m_starMags[i] << "\t    ";
          std::cout << m_aosys.d_opt() << "\t  ";
-         std::cout << sqrt(m_aosys.measurementError())*units << "\t   ";
-         std::cout << sqrt(m_aosys.timeDelayError())*units << "\t ";
-         std::cout << sqrt(m_aosys.fittingError())*units << "\t ";
-         std::cout << sqrt(m_aosys.chromScintOPDError())*units << "\t    ";
-         std::cout << sqrt(m_aosys.chromIndexError())*units << "\t    ";
-         std::cout << sqrt(m_aosys.dispAnisoOPDError())*units << "\t    ";
+         std::cout << m_aosys.bin_opt()+1 << "\t  ";
+         std::cout << sqrt(m_aosys.measurementErrorTotal())*units << "\t   ";
+         std::cout << sqrt(m_aosys.timeDelayErrorTotal())*units << "\t ";
+         std::cout << sqrt(m_aosys.fittingErrorTotal())*units << "\t ";
+         std::cout << sqrt(m_aosys.chromScintOPDErrorTotal())*units << "\t    ";
+         std::cout << sqrt(m_aosys.chromIndexErrorTotal())*units << "\t    ";
+         std::cout << sqrt(m_aosys.dispAnisoOPDErrorTotal())*units << "\t    ";
          std::cout << sqrt(m_aosys.ncpError())*units << "\t    ";
          std::cout << m_aosys.strehl() << "\n";
       }
@@ -1089,7 +1090,7 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
       return -1;
    }
       
-   int mnCon = m_aosys.D()/m_aosys.d_min()/2;
+   int mnCon = m_aosys.D()/m_aosys.d_min((size_t) 0)/2;
    
 
    std::vector<realT> mags;
