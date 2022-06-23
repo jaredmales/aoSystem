@@ -97,6 +97,7 @@ protected:
    realT k_n;
    std::string gridDir;       ///<The directory for writing the grid of PSDs.
    std::string subDir;       ///< The sub-directory of gridDir where to write the analysis results.
+   realT m_gfixed {0};
    int lpNc;                 ///< Number of linear predictor coefficients.  If <= 1 then not used.
    bool m_uncontrolledLifetimes {false}; ///< Whether or not lifetimes are calcualated for uncontrolled modes.
    int m_lifetimeTrials {0}; ///< Number of trials to use for calculating speckle lifetimes.  If 0, lifetimes are not calcualted.
@@ -198,9 +199,9 @@ void mxAOSystem_app<realT>::setupConfig()
    m_aosys.setupConfig(config);
    
    //PSD Configuration
-   config.add("subTipTilt"    ,"", "subTipTilt",    argType::Required, "PSD", "subTipTilt",    false, "bool",   "If set to true, the Tip/Tilt component is subtracted from the PSD.");
-   config.add("scintillation" ,"", "scintillation", argType::Required, "PSD", "scintillation", false, "bool",   "If set to true, then scintillation is included in the PSD.");
-   config.add("component"     ,"", "component",     argType::Required, "PSD", "component",     false, "string", "Can be phase [default], amplitude, or dispersion.");
+  // config.add("subTipTilt"    ,"", "subTipTilt",    argType::Required, "PSD", "subTipTilt",    false, "bool",   "If set to true, the Tip/Tilt component is subtracted from the PSD.");
+   //config.add("scintillation" ,"", "scintillation", argType::Required, "PSD", "scintillation", false, "bool",   "If set to true, then scintillation is included in the PSD.");
+   //config.add("component"     ,"", "component",     argType::Required, "PSD", "component",     false, "string", "Can be phase [default], amplitude, or dispersion.");
    
    
    
@@ -211,6 +212,7 @@ void mxAOSystem_app<realT>::setupConfig()
    config.add("k_n"     ,"", "k_n"    , argType::Required,  "temporal", "k_n",     false, "real", "The spatial frequency n index.");
    config.add("gridDir"     ,"", "gridDir"    , argType::Required,  "temporal", "gridDir",     false, "string", "The directory to store the grid of PSDs.");
    config.add("subDir"     ,"", "subDir"    , argType::Required,  "temporal", "subDir",     false, "string", "The directory to store the analysis results.");
+   config.add("gfixed"     ,"", "gfixed"    , argType::Required,  "temporal", "gfixed",     false, "float", "if > 0 then this fixed gain is used in the SI.");
    config.add("lpNc"      ,"", "lpNc",    argType::Required,  "temporal", "lpNc",     false, "int", "The number of linear prediction coefficients to use (if <= 1 ignored)");   
    config.add("uncontrolledLifetimes", "", "uncontrolledLifetimes", argType::Required, "temporal", "uncontrolledLifetimes", false, "bool", "If true, lifetimes are calculated for uncontrolled modes.  Default is false.");
    config.add("lifetimeTrials", "", "lifetimeTrials", argType::Required, "temporal", "lifetimeTrials", false, "int", "Number of trials to use for calculating speckle lifetimes.  If 0, lifetimes are not calcualted.");
@@ -256,42 +258,7 @@ void mxAOSystem_app<realT>::loadConfig()
 
    m_aosys.loadConfig(config);
    
-   config.add("aosys.starMags","", "aosys.starMags",argType::Required,"aosys","starMags",false, "real vector", "A vector of star magnitudes");
-
-   /**********************************************************/
-   /* PSD                                                    */
-   /**********************************************************/
-   if(config.isSet("subTipTilt"))
-   {
-      bool subtt;
-      config.get(subtt, "subTipTilt");
-      m_aosys.psd.subTipTilt(subtt);
-   }
-   
-   if(config.isSet("scintillation"))
-   {
-      bool scint = m_aosys.psd.scintillation();
-      config(scint, "scintillation");
-      
-      m_aosys.psd.scintillation(scint);
-   }
-   
-   if(config.isSet("component"))
-   {
-      std::string comp;
-      
-      config(comp, "component");
-      
-      if(comp == "phase") m_aosys.psd.component(mx::AO::analysis::PSDComponent::phase);
-      else if(comp == "amplitude") m_aosys.psd.component(mx::AO::analysis::PSDComponent::amplitude);
-      else if(comp == "dispPhase") m_aosys.psd.component(mx::AO::analysis::PSDComponent::dispPhase);
-      else if(comp == "dispAmplitude") m_aosys.psd.component(mx::AO::analysis::PSDComponent::dispAmplitude);
-      else
-      {
-         
-      }
-   }
-   
+   config.add("aosys.starMags","", "aosys.starMags",argType::Required,"aosys","starMags",false, "real vector", "A vector of star magnitudes");   
    
    /**********************************************************/
    /* System                                                 */
@@ -311,6 +278,7 @@ void mxAOSystem_app<realT>::loadConfig()
    
    config(gridDir, "gridDir");
    config(subDir, "subDir");
+   config(m_gfixed, "gfixed");
    config(lpNc, "lpNc");
 
    config(m_uncontrolledLifetimes, "uncontrolledLifetimes");
@@ -1003,6 +971,7 @@ int mxAOSystem_app<realT>::temporalPSD()
    std::cout << "#    opt-gain SI = " << goptSI << "\n";
    std::cout << "#    var SI = " << varSI << "\n";
    if(m_lifetimeTrials > 0) std::cout << "#    tau SI = " << tauSI << "\n";
+   std::cout << "#    gfixed = " << m_gfixed << '\n';
    std::cout << "#    LP Num. coeff = " << lpNc << "\n";
    std::cout << "#    opt-gain LP = " << goptLP << "\n";
    std::cout << "#    var LP = " << varLP << "\n";
@@ -1104,7 +1073,7 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
       mags = m_starMags;
    }
    
-   return ftPSD.analyzePSDGrid( subDir, gridDir, m_aosys.fit_mn_max(), mnCon, lpNc, mags, m_lifetimeTrials, m_uncontrolledLifetimes, m_writePSDs, m_writeXfer); 
+   return ftPSD.analyzePSDGrid( subDir, gridDir, m_aosys.fit_mn_max(), mnCon, m_gfixed, lpNc, mags, m_lifetimeTrials, m_uncontrolledLifetimes, m_writePSDs, m_writeXfer); 
    
 }
 
@@ -1133,6 +1102,7 @@ iosT & mxAOSystem_app<realT>::dumpSetup( iosT & ios)
    {
       ios << "#    dfreq = " << m_dfreq << '\n';
       ios << "#    fmax = " << m_fmax << '\n';
+      ios << "#    gfixed = " << m_gfixed << '\n';
       ios << "#    lpNc = " << lpNc << '\n';
    }
 
