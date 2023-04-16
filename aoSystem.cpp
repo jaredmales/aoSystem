@@ -533,6 +533,7 @@ int mxAOSystem_app<realT>::C2Var()
    imageT map;
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
+
    m_aosys.C2Map(map);
    
    mx::fits::fitsFile<realT> ff;
@@ -806,7 +807,6 @@ int mxAOSystem_app<realT>::ErrorBudget()
    
    if(wfeUnits == "nm")
    {
-      std::cerr << m_aosys.lam_sci() << "\n";
       units = m_aosys.lam_sci() / (mx::math::two_pi<realT>()) / 1e-9;
    }
    
@@ -824,7 +824,6 @@ int mxAOSystem_app<realT>::ErrorBudget()
       
       for(size_t i=0; i< m_starMags.size(); ++i)
       {
-         std::cerr << i+1 << "/" << m_starMags.size() << "\n";
          m_aosys.starMag(m_starMags[i]);
          std::cout << m_starMags[i] << "\t    ";
          std::cout << m_aosys.d_opt() << "\t  ";
