@@ -470,7 +470,7 @@ int mxAOSystem_app<realT>::C0Var()
    imageT map;
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
-   m_aosys.C0Map(map);
+   m_aosys.C0Map(map,false);
    
    mx::fits::fitsFile<realT> ff;
    ff.write("C0Var.fits", map);
@@ -490,7 +490,7 @@ int mxAOSystem_app<realT>::C0Con()
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
    
-   m_aosys.C0Map(map);
+   m_aosys.C0Map(map, true);
    
    C_MapCon("C0Con.fits", map);
    
@@ -503,7 +503,7 @@ int mxAOSystem_app<realT>::C1Var()
    imageT map;
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
-   m_aosys.C1Map(map);
+   m_aosys.C1Map(map, false);
    
    mx::fits::fitsFile<realT> ff;
    ff.write("C1Var.fits", map);
@@ -523,7 +523,7 @@ int mxAOSystem_app<realT>::C1Con()
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
    
-   m_aosys.C1Map(map);
+   m_aosys.C1Map(map, true);
    
    C_MapCon("C1Con.fits", map);
    
@@ -537,7 +537,7 @@ int mxAOSystem_app<realT>::C2Var()
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
 
-   m_aosys.C2Map(map);
+   m_aosys.C2Map(map, false);
    
    mx::fits::fitsFile<realT> ff;
    ff.write("C2Var.fits", map);
@@ -557,7 +557,7 @@ int mxAOSystem_app<realT>::C2Con()
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
    
-   m_aosys.C2Map(map);
+   m_aosys.C2Map(map, true);
    
    C_MapCon("C2Con.fits", map);
    
@@ -570,7 +570,7 @@ int mxAOSystem_app<realT>::C3Var()
    imageT map;
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
-   m_aosys.C3Map(map);
+   m_aosys.C3Map(map, false);
    
    mx::fits::fitsFile<realT> ff;
    ff.write("C3Var.fits", map);
@@ -590,7 +590,7 @@ int mxAOSystem_app<realT>::C3Con()
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
    
-   m_aosys.C3Map(map);
+   m_aosys.C3Map(map, true);
    
    C_MapCon("C3Con.fits", map);
    
@@ -603,7 +603,7 @@ int mxAOSystem_app<realT>::C4Var()
    imageT map;
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
-   m_aosys.C4Map(map);
+   m_aosys.C4Map(map, false);
    
    mx::fits::fitsFile<realT> ff;
    ff.write("C4Var.fits", map);
@@ -623,7 +623,7 @@ int mxAOSystem_app<realT>::C4Con()
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
    
-   m_aosys.C4Map(map);
+   m_aosys.C4Map(map, true);
    
    C_MapCon("C4Con.fits", map);
    
@@ -636,7 +636,7 @@ int mxAOSystem_app<realT>::C5Var()
    imageT map;
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
-   m_aosys.C5Map(map);
+   m_aosys.C5Map(map, false);
    
    mx::fits::fitsFile<realT> ff;
    ff.write("C5Var.fits", map);
@@ -656,7 +656,7 @@ int mxAOSystem_app<realT>::C5Con()
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
    
-   m_aosys.C5Map(map);
+   m_aosys.C5Map(map, true);
    
    C_MapCon("C5Con.fits", map);
    
@@ -669,7 +669,7 @@ int mxAOSystem_app<realT>::C6Var()
    imageT map;
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
-   m_aosys.C6Map(map);
+   m_aosys.C6Map(map, false);
    
    mx::fits::fitsFile<realT> ff;
    ff.write("C6Var.fits", map);
@@ -690,7 +690,7 @@ int mxAOSystem_app<realT>::C6Con()
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
    
-   m_aosys.C6Map(map);
+   m_aosys.C6Map(map, true);
    
    C_MapCon("C6Con.fits", map);
    
@@ -704,7 +704,7 @@ int mxAOSystem_app<realT>::C7Var()
    imageT map;
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
-   m_aosys.C7Map(map);
+   m_aosys.C7Map(map, false);
    
    mx::fits::fitsFile<realT> ff;
    ff.write("C7Var.fits", map);
@@ -725,7 +725,7 @@ int mxAOSystem_app<realT>::C7Con()
    
    map.resize( m_aosys.fit_mn_max()*2+1, m_aosys.fit_mn_max()*2 + 1);
    
-   m_aosys.C7Map(map);
+   m_aosys.C7Map(map, true);
    
    C_MapCon("C7Con.fits", map);
    
@@ -766,28 +766,28 @@ int mxAOSystem_app<realT>::CConAll()
       }
    }
    
-   m_aosys.C0Map(map);
+   m_aosys.C0Map(map, true);
    mx::AO::analysis::varmapToImage(im0, map, psf);
    
-   m_aosys.C1Map(map);
+   m_aosys.C1Map(map, true);
    mx::AO::analysis::varmapToImage(im1, map, psf);
 
-   m_aosys.C2Map(map);
+   m_aosys.C2Map(map, true);
    mx::AO::analysis::varmapToImage(im2, map, psf);
    
-   m_aosys.C3Map(map);
+   m_aosys.C3Map(map, true);
    mx::AO::analysis::varmapToImage(im3, map, psf);
 
-   m_aosys.C4Map(map);
+   m_aosys.C4Map(map, true);
    mx::AO::analysis::varmapToImage(im4, map, psf);
    
-   m_aosys.C5Map(map);
+   m_aosys.C5Map(map, true);
    mx::AO::analysis::varmapToImage(im5, map, psf);
 
-   m_aosys.C6Map(map);
+   m_aosys.C6Map(map, true);
    mx::AO::analysis::varmapToImage(im6, map, psf);
    
-   m_aosys.C7Map(map);
+   m_aosys.C7Map(map, true);
    mx::AO::analysis::varmapToImage(im7, map, psf);
    
    std::cout << "# Residual Contrast Profiles\n";
