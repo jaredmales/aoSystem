@@ -835,7 +835,7 @@ int mxAOSystem_app<realT>::ErrorBudget()
                 {
                     for(int s = 0; s < 4; ++s)
                     {
-                        m_aosys.m_opticalGain = S;
+                        m_aosys.opticalGain(S);
                         m_aosys.optd(m_aosys.optd()); // just trigger a re-calc
                         S = m_aosys.strehl();
                         // std::cerr << S << "\n";
@@ -843,7 +843,7 @@ int mxAOSystem_app<realT>::ErrorBudget()
                 }
                 else
                 {
-                    m_aosys.m_opticalGain = 0.1;
+                    m_aosys.opticalGain(0.1);
                 }
 
                 m_aosys.lam_sci(lam_sci);
