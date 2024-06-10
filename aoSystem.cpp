@@ -100,7 +100,8 @@ protected:
     std::string gridDir; ///< The directory for writing the grid of PSDs.
     std::string subDir;  ///< The sub-directory of gridDir where to write the analysis results.
     realT m_gfixed{0};
-    int lpNc;                            ///< Number of linear predictor coefficients.  If <= 1 then not used.
+    int lpNc {0};                            ///< Number of linear predictor coefficients.  If <= 1 then not used.
+    realT lpRegPrec {2};                 ///< The initial precision for the LP regularization algorithm.  Normal value is 2.  Higher is faster. Decrease if getting stuck in local minima.
     bool m_uncontrolledLifetimes{false}; ///< Whether or not lifetimes are calcualated for uncontrolled modes.
     int m_lifetimeTrials{0};             ///< Number of trials to use for calculating speckle lifetimes.  If 0, lifetimes are not calcualted.
     bool m_writePSDs{false};             ///< Flag controlling whether output temporal PSDs are written to disk or not.
@@ -177,7 +178,6 @@ mxAOSystem_app<realT>::mxAOSystem_app()
 
     k_m = 1;
     k_n = 0;
-    lpNc = 0;
 }
 
 template <typename realT>
@@ -213,6 +213,7 @@ void mxAOSystem_app<realT>::setupConfig()
     config.add("subDir", "", "subDir", argType::Required, "temporal", "subDir", false, "string", "The directory to store the analysis results.");
     config.add("gfixed", "", "gfixed", argType::Required, "temporal", "gfixed", false, "float", "if > 0 then this fixed gain is used in the SI.");
     config.add("lpNc", "", "lpNc", argType::Required, "temporal", "lpNc", false, "int", "The number of linear prediction coefficients to use (if <= 1 ignored)");
+    config.add("lpRegPrec", "", "lpRegPrec", argType::Required, "temporal", "lpRegPrec", false, "int", "The initial precision for the LP regularization algorithm.  Normal value is 2.  Higher is faster. Decrease if getting stuck in local minima.s to use (if <= 1 ignored)");
     config.add("uncontrolledLifetimes", "", "uncontrolledLifetimes", argType::Required, "temporal", "uncontrolledLifetimes", false, "bool", "If true, lifetimes are calculated for uncontrolled modes.  Default is false.");
     config.add("lifetimeTrials", "", "lifetimeTrials", argType::Required, "temporal", "lifetimeTrials", false, "int", "Number of trials to use for calculating speckle lifetimes.  If 0, lifetimes are not calcualted.");
     config.add("writePSDs", "", "writePSDs", argType::True, "temporal", "writePSDs", false, "bool", "Flag.  If set then output PSDs are written to disk.");
@@ -283,6 +284,7 @@ void mxAOSystem_app<realT>::loadConfig()
     config(subDir, "subDir");
     config(m_gfixed, "gfixed");
     config(lpNc, "lpNc");
+    config(lpRegPrec, "lpRegPrec");
 
     config(m_uncontrolledLifetimes, "uncontrolledLifetimes");
     config(m_lifetimeTrials, "lifetimeTrials");
@@ -919,6 +921,7 @@ int mxAOSystem_app<realT>::temporalPSD()
     {
         go_lp.f(freq);
         realT gmaxLP;
+        tflp.m_precision0 = lpRegPrec;
         tflp.regularizeCoefficients(gmaxLP, goptLP, varLP, go_lp, psdOL, psdN, lpNc);
     }
 
@@ -999,6 +1002,7 @@ int mxAOSystem_app<realT>::temporalPSD()
         std::cout << "#    tau SI = " << tauSI << "\n";
     std::cout << "#    gfixed = " << m_gfixed << '\n';
     std::cout << "#    LP Num. coeff = " << lpNc << "\n";
+    std::cout << "#    LP Reg. Precision = " << lpRegPrec << "\n";
     std::cout << "#    opt-gain LP = " << goptLP << "\n";
     std::cout << "#    var LP = " << varLP << "\n";
     if(m_lifetimeTrials > 0)
@@ -1097,7 +1101,7 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
         mags = m_starMags;
     }
 
-    return ftPSD.analyzePSDGrid(subDir, gridDir, m_aosys.fit_mn_max(), mnCon, m_gfixed, lpNc, mags, m_lifetimeTrials, m_uncontrolledLifetimes, m_writePSDs, m_writeXfer);
+    return ftPSD.analyzePSDGrid(subDir, gridDir, m_aosys.fit_mn_max(), mnCon, m_gfixed, lpNc, lpRegPrec, mags, m_lifetimeTrials, m_uncontrolledLifetimes, m_writePSDs, m_writeXfer);
 }
 
 template <typename realT>
@@ -1129,6 +1133,7 @@ iosT &mxAOSystem_app<realT>::dumpSetup(iosT &ios)
         ios << "#    fmax = " << m_fmax << '\n';
         ios << "#    gfixed = " << m_gfixed << '\n';
         ios << "#    lpNc = " << lpNc << '\n';
+        ios << "#    lpRegPrec = " << lpRegPrec << '\n';
     }
 
     m_aosys.dumpAOSystem(ios);
