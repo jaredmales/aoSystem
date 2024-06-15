@@ -1101,6 +1101,8 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
         mags = m_starMags;
     }
 
+    ftPSD.m_strehlOG = m_strehlOG;
+
     return ftPSD.analyzePSDGrid(subDir, gridDir, m_aosys.fit_mn_max(), mnCon, m_gfixed, lpNc, lpRegPrec, mags, m_lifetimeTrials, m_uncontrolledLifetimes, m_writePSDs, m_writeXfer);
 }
 
