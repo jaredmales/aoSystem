@@ -35,7 +35,7 @@
 #include <mx/math/func/airyPattern.hpp>
 
 #include <mx/app/application.hpp>
-#include <mx/math/fft/fftwEnvironment.hpp>
+#include <mx/math/ft/fftwEnvironment.hpp>
 
 using namespace mx::math;
 
@@ -258,11 +258,11 @@ void mxAOSystem_app<realT>::loadConfig()
         }
     }
 
-   
+
     /**********************************************************/
     /* System                                                 */
     /**********************************************************/
-     
+
     m_aosys.loadConfig(config);
 
     if(config.isSet("aosys.starMags"))
@@ -1151,7 +1151,7 @@ iosT &mxAOSystem_app<realT>::dumpSetup(iosT &ios)
 
 int main(int argc, char **argv)
 {
-    mx::math::fft::fftwEnvironment<double, false> fftwEnv;
+    mx::math::ft::fftwEnvironment<double, false> fftwEnv;
 
     mxAOSystem_app<double> m_aosysA;
 
