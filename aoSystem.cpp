@@ -921,8 +921,9 @@ int mxAOSystem_app<realT>::temporalPSD()
     {
         go_lp.f(freq);
         realT gmaxLP;
+        realT minscLP; ///\todo record minsc if appropriate
         tflp.m_precision0 = lpRegPrec;
-        tflp.regularizeCoefficients(gmaxLP, goptLP, varLP, go_lp, psdOL, psdN, lpNc);
+        tflp.regularizeCoefficients(gmaxLP, goptLP, varLP, minscLP, go_lp, psdOL, psdN, lpNc);
     }
 
     realT tauOL = 0, tauSI = 0, tauLP = 0;
