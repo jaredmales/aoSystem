@@ -94,6 +94,7 @@ protected:
     std::vector<realT> m_starMags;
 
     realT m_dfreq{0.1};
+    realT m_f0 {0};
     realT m_fmax{0};
     realT k_m;
     realT k_n;
@@ -199,14 +200,11 @@ void mxAOSystem_app<realT>::setupConfig()
     m_aosys.setupConfig(config);
     config.add("aosys.starMags", "", "aosys.starMags", argType::Required, "aosys", "starMags", false, "real vector", "A vector of star magnitudes");
     config.add("aosys.strehlOG", "", "aosys.strehlOG", argType::Required, "aosys", "strehlOG", false, "bool", "Flag controlling whether Strehl is used as the optical gain in error budgets. Default true.");
-    // PSD Configuration
-    // config.add("subTipTilt"    ,"", "subTipTilt",    argType::Required, "PSD", "subTipTilt",    false, "bool",   "If set to true, the Tip/Tilt component is subtracted from the PSD.");
-    // config.add("scintillation" ,"", "scintillation", argType::Required, "PSD", "scintillation", false, "bool",   "If set to true, then scintillation is included in the PSD.");
-    // config.add("component"     ,"", "component",     argType::Required, "PSD", "component",     false, "string", "Can be phase [default], amplitude, or dispersion.");
 
     // Temporal configuration
     config.add("fmax", "", "fmax", argType::Required, "temporal", "fmax", false, "real", "Maximum temporal frequency at which to explicitly calculate PSDs.  If 0 (default) this is based on highest wind peak.  A -17/3 power law is used above this frequency.");
     config.add("dfreq", "", "dfreq", argType::Required, "temporal", "dfreq", false, "real", "Spacing of frequencies in the analysis.");
+    config.add("f0", "", "f0", argType::Required, "temporal", "f0", false, "real", "Berdja boiling parameter.");
     config.add("k_m", "", "k_m", argType::Required, "temporal", "k_m", false, "real", "The spatial frequency m index.");
     config.add("k_n", "", "k_n", argType::Required, "temporal", "k_n", false, "real", "The spatial frequency n index.");
     config.add("gridDir", "", "gridDir", argType::Required, "temporal", "gridDir", false, "string", "The directory to store the grid of PSDs.");
@@ -277,6 +275,7 @@ void mxAOSystem_app<realT>::loadConfig()
     /**********************************************************/
     config(m_fmax, "fmax");
     config(m_dfreq, "dfreq");
+    config(m_f0, "f0");
     config(k_m, "k_m");
     config(k_n, "k_n");
 
@@ -878,6 +877,7 @@ int mxAOSystem_app<realT>::temporalPSD()
 
     mx::AO::analysis::fourierTemporalPSD<realT, m_aosysT> ftPSD;
     ftPSD.m_aosys = &m_aosys;
+    ftPSD.m_f0 = m_f0;
 
     if(m_aosys.tauWFS() <= 0)
     {
@@ -895,6 +895,7 @@ int mxAOSystem_app<realT>::temporalPSD()
 
     mx::math::vectorScale(freq, 0.5 * fs / m_dfreq, m_dfreq, m_dfreq);
     psdOL.resize(freq.size());
+
 
     ftPSD.multiLayerPSD(psdOL, freq, k_m, k_n, 1, m_fmax);
 
