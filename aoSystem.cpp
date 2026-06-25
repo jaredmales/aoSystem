@@ -89,7 +89,7 @@ protected:
 
     std::string wfeUnits;
 
-    bool m_strehlOG {1};
+    bool m_strehlOG {false};
 
     std::vector<realT> m_starMags;
 
@@ -199,7 +199,7 @@ void mxAOSystem_app<realT>::setupConfig()
 
     m_aosys.setupConfig(config);
     config.add("aosys.starMags", "", "aosys.starMags", argType::Required, "aosys", "starMags", false, "real vector", "A vector of star magnitudes");
-    config.add("aosys.strehlOG", "", "aosys.strehlOG", argType::Required, "aosys", "strehlOG", false, "bool", "Flag controlling whether Strehl is used as the optical gain in error budgets. Default true.");
+    config.add("aosys.strehlOG", "", "aosys.strehlOG", argType::Required, "aosys", "strehlOG", false, "bool", "Flag controlling whether Strehl is used as the optical gain in error budgets. Default false.");
 
     // Temporal configuration
     config.add("fmax", "", "fmax", argType::Required, "temporal", "fmax", false, "real", "Maximum temporal frequency at which to explicitly calculate PSDs.  If 0 (default) this is based on highest wind peak.  A -17/3 power law is used above this frequency.");
