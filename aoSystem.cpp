@@ -945,9 +945,15 @@ int mxAOSystem_app<realT>::temporalPSD()
             ETFxn[i] = 1.0;
             NTFxn[i] = 0.0;
         }
-        mx::AO::analysis::speckleAmpPSD(spfreq, sppsd, freq, psdOL, ETFxn, psdN, NTFxn, m_lifetimeTrials);
+        if(mx::AO::analysis::speckleAmpPSD(spfreq, sppsd, freq, psdOL, ETFxn, psdN, NTFxn, m_lifetimeTrials) < 0)
+        {
+            return -1;
+        }
         spvar = mx::sigproc::psdVar(spfreq, sppsd);
-        tauOL = pvm(error, spfreq, sppsd, splifeT) * (splifeT) / spvar;
+        if(spvar > 0)
+        {
+            tauOL = pvm(error, spfreq, sppsd, splifeT) * (splifeT) / spvar;
+        }
 
         if(goptSI > 0)
         {
@@ -966,9 +972,15 @@ int mxAOSystem_app<realT>::temporalPSD()
             }
         }
 
-        mx::AO::analysis::speckleAmpPSD(spfreq, sppsd, freq, psdOL, ETFxn, psdN, NTFxn, m_lifetimeTrials);
+        if(mx::AO::analysis::speckleAmpPSD(spfreq, sppsd, freq, psdOL, ETFxn, psdN, NTFxn, m_lifetimeTrials) < 0)
+        {
+            return -1;
+        }
         spvar = mx::sigproc::psdVar(spfreq, sppsd);
-        tauSI = pvm(error, spfreq, sppsd, splifeT) * (splifeT) / spvar;
+        if(spvar > 0)
+        {
+            tauSI = pvm(error, spfreq, sppsd, splifeT) * (splifeT) / spvar;
+        }
 
         if(goptLP > 0)
         {
@@ -987,9 +999,15 @@ int mxAOSystem_app<realT>::temporalPSD()
             }
         }
 
-        mx::AO::analysis::speckleAmpPSD(spfreq, sppsd, freq, psdOL, ETFxn, psdN, NTFxn, m_lifetimeTrials);
+        if(mx::AO::analysis::speckleAmpPSD(spfreq, sppsd, freq, psdOL, ETFxn, psdN, NTFxn, m_lifetimeTrials) < 0)
+        {
+            return -1;
+        }
         spvar = mx::sigproc::psdVar(spfreq, sppsd);
-        tauLP = pvmLP(error, spfreq, sppsd, splifeT) * (splifeT) / spvar;
+        if(spvar > 0)
+        {
+            tauLP = pvmLP(error, spfreq, sppsd, splifeT) * (splifeT) / spvar;
+        }
     }
 
     dumpSetup(std::cout);
@@ -1090,7 +1108,38 @@ int mxAOSystem_app<realT>::temporalPSDGridAnalyze()
         return -1;
     }
 
-    int mnCon = m_aosys.D() / m_aosys.d_min((size_t)0) / 2;
+    if(m_aosys.tauWFS() <= 0)
+    {
+        std::cerr << "temporalPSDGridAnalyze: You must set tauWFS to be > 0 to specify loop frequency.\n";
+        return -1;
+    }
+
+    if(m_lifetimeTrials < 0)
+    {
+        std::cerr << "temporalPSDGridAnalyze: lifetimeTrials must be >= 0.\n";
+        return -1;
+    }
+
+    if(lpNc < 0)
+    {
+        std::cerr << "temporalPSDGridAnalyze: lpNc must be >= 0.\n";
+        return -1;
+    }
+
+    if(m_aosys.D() <= 0)
+    {
+        std::cerr << "temporalPSDGridAnalyze: You must set D to be > 0.\n";
+        return -1;
+    }
+
+    realT dMin0 = m_aosys.d_min((size_t)0);
+    if(dMin0 <= 0)
+    {
+        std::cerr << "temporalPSDGridAnalyze: You must set d_min[0] to be > 0.\n";
+        return -1;
+    }
+
+    int mnCon = static_cast<int>(m_aosys.D() / (2 * dMin0));
 
     std::vector<realT> mags;
 
