@@ -913,7 +913,15 @@ int mxAOSystem_app<realT>::temporalPSD()
 
     realT gmaxSI = 0;
     realT varSI;
-    realT goptSI = go_si.optGainOpenLoop(varSI, psdOL, psdN, gmaxSI);
+    realT goptSI;
+
+    mx::error_t ec  = go_si.optGainOpenLoop(goptSI, varSI, psdOL, psdN, gmaxSI);
+
+    if(!!ec)
+    {
+        std::cerr << "Error from clGainOpt::optGainOpenLoop:\n";
+        return -1;
+    }
 
     // Only bother if number of coefficients is > 1.
     realT goptLP = -1;
